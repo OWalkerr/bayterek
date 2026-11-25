@@ -94,6 +94,13 @@ Enemy (CharacterBody3D) ── enemy.gd  katman "enemy" (3), maske "world"
 ```
 Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Tehlike alanları (`SporeCloud`) katman "hazard" (5).
 
+## Sanat Altyapısı (M7)
+- `assets/shaders/stylized_lit.gdshader` + `scripts/art/stylizer.gd` (`Stylizer.apply`) + `scripts/art/region_palette.gd` (`RegionPalette`, `data/art/palette_kok_dibi.tres`) + `scripts/art/region_environment.gd` (`RegionEnvironment`).
+- Kabuk her odayı yükleyince ve oyuncuyu oluşturunca `Stylizer.apply`; `Enemy` kendi görselini çevirir ve vuruş parlamasını shader'ın `flash` parametresiyle yapar.
+- `scripts/art/model_validator.gd` + `tests/model_check.tscn`: `assets/models/**` altındaki her GLB/GLTF/FBX'i ölçer.
+- `scripts/player/player_animator.gd` (`Player/Animator`): mantıksal animasyon durumu; model yoksa kapsülde yordamsal poz, `Visual` altında AnimationPlayer'lı model varsa `clip_map` ile klip oynatır.
+- **Shader doğrulaması:** headless'ta GPU yok → shader yalnızca web build'de (WebGL/Compatibility) derlenip görülür; her M7 değişikliğinde web ekran görüntüsü alınır.
+
 ## Boss Mimarisi (M6)
 - `scripts/bosses/`: `Rooteater` (faz + eylem durum makinesi, kendi `BossPhaseController` mantığı tek dosyada), `BossWeakPoint` (Enemy alt sınıfı → oyuncunun kamçı sistemi değişmeden çalışır), `BossHazard`, `RisingMaw`, `RootRock`.
 - Boss odası script'i (`room_19_kokyiyen_ini.gd`) boss'u yalnızca `kokyiyen_ini/boss_defeated` bayrağı yoksa kurar; tetik alanı dövüşü başlatır ve kapıları kilitler; `defeated` → bayrak + Kut + tam can + kayıt + `EventBus.story_requested`.
@@ -139,6 +146,8 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `test_m4.tscn` | Harita verisi (karşılıklı kapılar, çakışmayan hücreler, erişilebilirlik), yeni oyun, kapı geçişi (hız + kayıt), **tüm kapıların fiziksel varışı**, Ocak, ölümde son Ocak, kalıcı toplanabilir, kayıt turu, Devam, harita ekranı |
   | `test_m5.tscn` | Bölge verisi (13 oda, 2 Kut, yeteneksiz/yetenekli erişilebilirlik), kanca (yeteneksiz çalışmaz, hedef, ip), sunak, **botla**: Kanca Bahçesi, Ocak Odası tavanı, Çiçek Kuyusu (kancalı geçer / kancasız geçemez), derinlik sırrı → Gizli Oda; Öz + iyileşme |
   | `test_m6.tscn` | Boss: giriş (kart, kilit), çatlak uyarısı ≥ 0.4 sn, zayıf nokta, fırlama/süpürme (zıplayınca kaçılır), Faz 2 (Şişkin, sınır, tüm arena), kovalamaca (zemin ağızla çöker, değince hasar + fırlatma, ölüm yok), final, ödüller, hikaye, boss geri gelmez; **bot ile tam dövüş denemeleri** (`TRIALS=5`, `HIT_LOG=1`) |
+  | `test_m7.tscn` | Shader + palet, Stylizer (renk/ışıma korunur, efektler atlanır, idempotent), **15 odanın tamamında çevrilmemiş opak materyal yok**, düşman parlaması, ortam paleti, ModelValidator (yapay iyi/kötü modeller), PlayerAnimator durumları |
+  | `model_check.tscn` | AI modelleri: `assets/models/**` (model yoksa 0 ile geçer) |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.

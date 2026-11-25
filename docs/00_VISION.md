@@ -74,3 +74,5 @@
 | 2026-11-25 | Oyun dili başlangıçta TranslationServer ile "tr"; çeviriler project.godot'a kayıtlı | tr() anahtarları ham dönüyordu |
 | 2026-11-25 | Geliştirici seçiciye boss odaları (6 Eşiği, 7 İn) eklendi; kanca verilir, boss bayrağı sıfırlanır | Kullanıcı Yeni Oyun'da boss'u bulamadı (8 oda ötede); boss denemeleri doğrudan yapılabilsin |
 | 2026-11-25 | Web build'de önbellek kırma (benzersiz dosya adları) + menüde sürüm etiketi | Kullanıcı yeni build yerine önbellekteki eski oyunu görüyordu |
+| 2026-11-25 | AI 3D aracı: Tripo ana araç; Alpay için Meshy ile kıyas (Mixamo şablonu) | İnsansı olmayan otomatik rig + hedef üçgen sayısı; karar model_check ölçümleriyle kesinleşir |
+| 2026-11-25 | Stil, çalışma zamanı Stylizer + tek stilize shader + bölge paleti ile | Hangi araçtan gelirse gelsin her model ve greybox aynı aileye girer; elle materyal bağlama yok |

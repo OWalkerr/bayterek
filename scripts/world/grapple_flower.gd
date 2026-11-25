@@ -42,6 +42,7 @@ func set_targeted(value: bool) -> void:
 
 func _build_flower() -> void:
 	_petal_mat = StandardMaterial3D.new()
+	_petal_mat.set_meta(Stylizer.META_SKIP, true)   # hedef vurgusunda rengi değişir
 	_petal_mat.emission_enabled = true
 	var petal := TorusMesh.new()
 	petal.inner_radius = 0.18

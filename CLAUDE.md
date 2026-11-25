@@ -20,6 +20,7 @@ Claude bu projede **kod profesörü + oyun tasarımcısı + arayüz tasarımcıs
 - `Engine.time_scale` doğrudan yazılmaz; `TimeScale.request(id, ölçek, süre)` kullanılır.
 - Global olaylar `EventBus` üzerinden; kalıcı durum `GameState` içinde. Oda geçişleri yalnızca `SceneRouter` ile.
 - Yeni oda = `tools/gen_rooms.py` tablosuna satır (→ `.tscn`) + `RoomRegistry` satırı + `scripts/world/rooms/` geometri script'i; kapılar karşılıklı, yetenek gerektiren kapılar `requires` ile işaretli (test_m4/m5 denetler).
+- Görsel: yeni materyaller StandardMaterial3D olarak yazılır, `Stylizer` stilize shader'a çevirir; rengi canlı değişenlere `no_stylize` meta'sı. Shader değişince web build'de ekran görüntüsüyle doğrula (headless'ta GPU yok).
 - Kullanıcının bilgisayarına bir şey kurulamaz; testler bulutta headless, oynanış testleri web build ile.
 
 ## Komutlar
@@ -37,6 +38,8 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn            # M
 godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn            # M4 odalar, kapılar, Ocak, kayıt, harita
 godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn            # M5 bölge, kanca, kapı matrisi, sır, Öz/iyileşme
 godot --headless --fixed-fps 60 --path . res://tests/test_m6.tscn            # M6 Kökyiyen + bot dövüş denemeleri (TRIALS=5 HIT_LOG=1)
+godot --headless --fixed-fps 60 --path . res://tests/test_m7.tscn            # M7 stilize shader, Stylizer, palet, model doğrulayıcı, animatör
+godot --headless --path . res://tests/model_check.tscn                       # assets/models altındaki AI modellerini denetle
 python3 tools/gen_rooms.py                                                   # oda .tscn'lerini tablodan üret
 BAYTEREK_CAMERA_BACKEND=rig godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn   # yedek kamera arka ucu
 

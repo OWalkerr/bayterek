@@ -30,8 +30,8 @@ var _stagger: float = 0.0
 var _flash: float = 0.0
 var _dead: bool = false
 var _respawn_timer: float = 0.0
-var _materials: Array[StandardMaterial3D] = []
-var _base_colors: Array[Color] = []
+var _flash_materials: Array[ShaderMaterial] = []
+var _flash_on: bool = false
 
 
 func _ready() -> void:
@@ -44,6 +44,7 @@ func _ready() -> void:
 	visual.name = "Visual"
 	add_child(visual)
 	_build_visual()
+	Stylizer.apply(visual)
 	_collect_materials(visual)
 	_build_hurtbox()
 	_enemy_ready()
@@ -173,24 +174,29 @@ func _build_hurtbox() -> void:
 	add_child(hurtbox)
 
 
+## Vuruş parlaması için düşmanın stilize materyalleri ("flash" parametresi).
 func _collect_materials(node: Node) -> void:
 	for child: Node in node.get_children():
 		var mi := child as MeshInstance3D
 		if mi != null and mi.mesh != null:
-			var mat := mi.mesh.surface_get_material(0) as StandardMaterial3D
-			if mat != null:
-				_materials.append(mat)
-				_base_colors.append(mat.albedo_color)
+			var mat := mi.get_surface_override_material(0) as ShaderMaterial
+			if mat != null and Stylizer.is_stylized(mat) and not _flash_materials.has(mat):
+				_flash_materials.append(mat)
 		_collect_materials(child)
 
 
 func _update_flash(delta: float) -> void:
-	if _flash <= 0.0 and _materials.is_empty():
+	if _flash <= 0.0 and not _flash_on:
 		return
 	_flash = maxf(_flash - delta, 0.0)
-	var k := 1.0 if _flash > 0.0 else 0.0
-	for i in _materials.size():
-		_materials[i].albedo_color = _base_colors[i].lerp(Color.WHITE, k)
+	_flash_on = _flash > 0.0
+	for mat: ShaderMaterial in _flash_materials:
+		mat.set_shader_parameter(&"flash", 1.0 if _flash_on else 0.0)
+
+
+## Testler için: şu an parlıyor mu?
+func is_flashing() -> bool:
+	return _flash_on
 
 
 func _player_tuning() -> PlayerTuning:

@@ -18,6 +18,10 @@ func _ready() -> void:
 	super._ready()
 
 
+func _vine_color_changes() -> bool:
+	return true
+
+
 func _process(delta: float) -> void:
 	if not enabled:
 		_respawn_timer -= delta

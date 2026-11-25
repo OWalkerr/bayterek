@@ -15,6 +15,7 @@ var hud: DebugHud
 var room: GreyboxRoom
 var room_index: int = -1
 var game_hud: GameHud
+var environment: RegionEnvironment
 var map_screen: MapScreen
 var ability_toast: AbilityToast
 var boss_card: BossCard
@@ -100,7 +101,7 @@ func load_room(index: int) -> void:
 	GameState.autosave_enabled = false
 	var id: StringName = RoomRegistry.DEV_ROOMS[index]
 	for ability: StringName in RoomRegistry.DEV_GRANTS.get(id, []):
-		GameState.unlock_ability(ability)
+		GameState.abilities[ability] = true   # sessizce (yetenek kartı gösterme)
 	for key: String in RoomRegistry.DEV_RESET_FLAGS:
 		GameState.flags.erase(key)
 	SceneRouter.enter_room_immediate(id)
@@ -118,6 +119,7 @@ func swap_room(packed: PackedScene) -> Room:
 	room = packed.instantiate() as GreyboxRoom
 	room.name = "Room"
 	add_child(room)
+	Stylizer.apply(room)
 	room.goal_reached.connect(_on_goal_reached)
 	_death_timer = -1.0
 	room_index = RoomRegistry.DEV_ROOMS.find(room.room_id)
@@ -160,33 +162,10 @@ func _on_vine_released(_anchor: Node3D, perfect: bool) -> void:
 # ---------------------------------------------------------------- Ortam
 
 func _build_environment() -> void:
-	var env := Environment.new()
-	env.background_mode = Environment.BG_SKY
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("1d2a44")
-	sky_mat.sky_horizon_color = Color("4a5d7a")
-	sky_mat.ground_bottom_color = Color("120c1c")
-	sky_mat.ground_horizon_color = Color("2b1e3f")
-	var sky := Sky.new()
-	sky.sky_material = sky_mat
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.6
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.glow_enabled = true
-	env.fog_enabled = true
-	env.fog_light_color = Color("3a2d55")
-	env.fog_density = 0.008
-	var world_env := WorldEnvironment.new()
-	world_env.environment = env
-	add_child(world_env)
-
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-50.0, 30.0, 0.0)
-	sun.light_color = Color("ffe2b0")
-	sun.light_energy = 1.1
-	sun.shadow_enabled = true
-	add_child(sun)
+	environment = RegionEnvironment.new()
+	environment.name = "RegionEnvironment"
+	add_child(environment)
+	environment.apply_palette(Stylizer.get_palette())
 
 
 # ---------------------------------------------------------------- Oyuncu & kamera
@@ -194,6 +173,7 @@ func _build_environment() -> void:
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate() as Player
 	add_child(player)
+	Stylizer.apply(player)
 
 
 func _build_camera() -> void:

@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://data/tuning/player_tuning.tres" id="2_tuning"]
 [ext_resource type="Script" path="res://scripts/player/player_combat.gd" id="3_combat"]
+[ext_resource type="Script" path="res://scripts/player/player_animator.gd" id="4_anim"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.35
@@ -46,3 +47,6 @@ mesh = SubResource("Mesh_nose")
 
 [node name="WhipCombat" type="Node3D" parent="."]
 script = ExtResource("3_combat")
+
+[node name="Animator" type="Node" parent="."]
+script = ExtResource("4_anim")

@@ -53,6 +53,11 @@ func set_grabbed(value: bool) -> void:
 	_on_grab_changed(value)
 
 
+## Rengi çalışma zamanında değişen sarmaşıklar (RottenVine) stilize edilmez.
+func _vine_color_changes() -> bool:
+	return false
+
+
 ## Alt sınıflar (ör. RottenVine) için kanca.
 func _on_grab_changed(_value: bool) -> void:
 	pass
@@ -66,6 +71,8 @@ func _build_visual() -> void:
 	_vine_material = StandardMaterial3D.new()
 	_vine_material.albedo_color = vine_color
 	_vine_material.roughness = 0.9
+	if _vine_color_changes():
+		_vine_material.set_meta(Stylizer.META_SKIP, true)
 
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = 0.06

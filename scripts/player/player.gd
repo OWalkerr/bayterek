@@ -49,6 +49,7 @@ var _blink_timer: float = 0.0
 
 @onready var _visual: Node3D = $Visual
 @onready var combat: PlayerCombat = $WhipCombat
+@onready var animator: PlayerAnimator = $Animator
 
 
 func _init() -> void:
