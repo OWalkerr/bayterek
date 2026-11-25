@@ -147,6 +147,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 - **Girdi simülasyonu tuzağı:** Godot 4.6'da `Input.action_press()` bir sonraki fizik karesinde "just pressed" olur; testte tuş en az 2–3 kare basılı tutulmalı.
 - **Bot:** `test_m1.gd` içindeki bot yönü basılı tutar, kenarda/tırmanma sarmaşığı önünde zıplar, sallanırken salınım yönünde pompalar ve açı > 40° & ω > 0 iken bırakır. `BOT_ANGLE=50` ile bırakma açısı, `BOT_ONLY=1` ile yalnızca bot, `BOT_DEBUG=1` ile kare kare iz alınır.
 - İki kamera arka ucu: `BAYTEREK_CAMERA_BACKEND=rig` ile tüm testler yedek blend'le de koşulur (milestone sonunda ikisi de yeşil olmalı).
+- **Önbellek kırma:** `deploy_web.sh` her build'i benzersiz adla dışa aktarır (`bayterek-<sha>-<zaman>.pck/.wasm`), `index.html` bunları yükler → tarayıcı eski oyunu önbellekten getiremez. Sürüm kimliği `data/build_info.txt` (gitignore) ile menünün altında görünür ("Sürüm: …"); yerelde "yerel".
 - Her milestone sonunda web export alınır: `tools/deploy_web.sh "mesaj"` → `build/web/` → `gh-pages` dalı (main'e build girmez). Oynanabilir link: https://owalkerr.github.io/bayterek/
 
 ## Geliştirme Kısayolları (web test build'inde kalır)

@@ -73,3 +73,4 @@
 | 2026-11-25 | Boss zorluğu: bot denemeleriyle başlangıç ayarı, sonra kullanıcı denemeleri | Kullanıcı kararı; bot alt sınır verir, tüm sayılar @export |
 | 2026-11-25 | Oyun dili başlangıçta TranslationServer ile "tr"; çeviriler project.godot'a kayıtlı | tr() anahtarları ham dönüyordu |
 | 2026-11-25 | Geliştirici seçiciye boss odaları (6 Eşiği, 7 İn) eklendi; kanca verilir, boss bayrağı sıfırlanır | Kullanıcı Yeni Oyun'da boss'u bulamadı (8 oda ötede); boss denemeleri doğrudan yapılabilsin |
+| 2026-11-25 | Web build'de önbellek kırma (benzersiz dosya adları) + menüde sürüm etiketi | Kullanıcı yeni build yerine önbellekteki eski oyunu görüyordu |

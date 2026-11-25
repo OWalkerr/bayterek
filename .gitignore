@@ -2,3 +2,4 @@
 build/
 *.tmp
 /android/
+data/build_info.txt

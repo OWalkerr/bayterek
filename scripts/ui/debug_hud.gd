@@ -73,6 +73,14 @@ func setup(target: Player, room_names: PackedStringArray) -> void:
 	EventBus.vine_broken.connect(_on_vine_broken)
 
 
+## data/build_info.txt (deploy betiği yazar) yoksa "yerel".
+static func get_build_id() -> String:
+	const PATH := "res://data/build_info.txt"
+	if FileAccess.file_exists(PATH):
+		return FileAccess.get_file_as_string(PATH).strip_edges()
+	return "yerel"
+
+
 func is_room_menu_visible() -> bool:
 	return _room_menu.visible
 
@@ -146,6 +154,9 @@ func _build_room_menu() -> void:
 			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning",
 			UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM))
 	add_child(_room_menu)
+	# Sürüm etiketi (web'de hangi build'in açık olduğunu görmek için; tools/deploy_web.sh yazar)
+	var version := UiStyle.label("Sürüm: %s" % get_build_id(), UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM)
+	box.add_child(version)
 	_save_label = UiStyle.label("Kaydedildi", UiStyle.FONT_SIZE_SMALL, UiStyle.SAP_GOLD)
 	_save_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	_save_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
