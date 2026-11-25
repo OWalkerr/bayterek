@@ -1,8 +1,8 @@
 class_name GreyboxRoom
-extends Node3D
-## Kodla kurulan greybox oda tabanı. Her test odası bundan türer ve `_build()` içinde
-## yardımcılarla (box/vine/climb/rotten/glow/goal/cave_zone) geometriyi kurar.
-## M4'te gerçek `Room` (room.gd) + `.tscn` odalarıyla değiştirilecek; yardımcılar orada da işe yarar.
+extends Room
+## Kodla kurulan greybox oda. Oda sahnesinin (.tscn) kök script'i bundan türer ve `_build()` içinde
+## yardımcılarla (box/vine/climb/rotten/glow/goal/cave_zone…) geometriyi kurar. Kimlik, harita
+## hücresi ve kapılar .tscn'dedir (Room). M7'de sanat gelince aynı .tscn'e modeller eklenir.
 
 signal goal_reached
 
@@ -14,14 +14,7 @@ const C_GLOW := Color("4fb3a9")
 const C_SAP := Color("e8a33d")
 const C_SKY := Color("f4efe3")
 
-## Odanın kimliği ve menüde görünen adı/fikri ("bir oda = bir fikir").
-var room_id: StringName = &"room"
-var display_name: String = "Oda"
-var idea: String = ""
-var spawn_point: Vector3 = Vector3.ZERO
 var goal: RoomGoal = null
-## Kamera oda sınırları (SIDE). Boşsa oda geometrisinden (StaticBody kutuları) otomatik hesaplanır.
-var bounds: AABB = AABB()
 ## Otomatik sınırlara eklenen pay (m).
 var bounds_margin: float = 1.0
 

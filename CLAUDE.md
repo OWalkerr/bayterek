@@ -18,7 +18,8 @@ Claude bu projede **kod profesörü + oyun tasarımcısı + arayüz tasarımcıs
 - Sallanma fizik motoruyla değil **kinematik sarkaçla** yapılır (docs/03 §2.2).
 - Kamera ile doğrudan değil `CameraDirector` API'si ile konuşulur. Kamera blend'i Phantom Camera (addons/), beyin `CameraRig`.
 - `Engine.time_scale` doğrudan yazılmaz; `TimeScale.request(id, ölçek, süre)` kullanılır.
-- Global olaylar `EventBus` üzerinden; kalıcı durum `GameState` içinde.
+- Global olaylar `EventBus` üzerinden; kalıcı durum `GameState` içinde. Oda geçişleri yalnızca `SceneRouter` ile.
+- Yeni oda = `scenes/world/regions/<bölge>/rooms/<id>.tscn` + `RoomRegistry` satırı; kapılar karşılıklı olmalı (test_m4 denetler).
 - Kullanıcının bilgisayarına bir şey kurulamaz; testler bulutta headless, oynanış testleri web build ile.
 
 ## Komutlar
@@ -33,6 +34,7 @@ godot --headless --fixed-fps 60 --path . res://tests/test_movement.tscn      # M
 godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn            # M1 hareket + bot oda geçişi
 godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn            # M2 savaş + can + bot savaş odası
 godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn            # M3 kamera + derinlik + bot mağara odası
+godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn            # M4 odalar, kapılar, Ocak, kayıt, harita
 BAYTEREK_CAMERA_BACKEND=rig godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn   # yedek kamera arka ucu
 
 # Web export şablonları (oturum başına bir kez, ~80 MB; yalnızca web dosyaları çıkarılır)

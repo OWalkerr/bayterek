@@ -29,15 +29,17 @@
  ◆ 128         ← Öz damlası (para) — sadece değişince 3 sn görünür
 ```
 - **M2 durumu:** Yapraklar `GameHud` ile çiziliyor (dolu `#5E8C4A`, kuru `#7A5A3A`, kaybedilen yaprak 0.3 sn büyür). Öz barı ve para M5+.
+- **M4:** Sağ altta kayıt anında 1.5 sn "Kaydedildi"; Ocak yanında dünyada "W · Dinlen" (Label3D).
+- **Font notu:** Web'deki varsayılan fontta ◆ ● ★ gibi simgeler yok (kutu görünür) → simgeler şekil olarak çizilir ya da düz metin kullanılır; asıl fontlar M9'da (Nunito/Inter, Türkçe karakterler).
 - Sağ alt: yetenek kazanıldığında veya kanca hedefi görüldüğünde küçük tuş ipucu.
 - Mini harita yok (keşfi öldürmesin); harita menüde. İsteğe bağlı mini harita ayarı.
 
 ## Menüler
 | Ekran | İçerik |
 |---|---|
-| **Ana menü** | Arka planda canlı Bayterek sahnesi (kamera yavaşça yukarı kayar). Devam / Yeni Oyun / Ayarlar / Çıkış |
+| **Ana menü** | Arka planda canlı Bayterek sahnesi (kamera yavaşça yukarı kayar). Devam / Yeni Oyun / Ayarlar / Çıkış. **M4 greybox:** Yeni Oyun / Devam (kayıt varsa) + geliştirici test odaları |
 | **Duraklatma** | Sekmeler: Harita · Yetenekler · Bitig (günlük/ansiklopedi) · Tohumlar · Ayarlar |
-| **Harita** | Dikey ağaç silüeti üzerinde keşfedilmiş odalar; Ocak'lar, kapılar, işaretler. Bölgeler ağaç katmanı olarak açılır. |
+| **Harita** | Dikey ağaç silüeti üzerinde keşfedilmiş odalar; Ocak'lar, kapılar, işaretler. Bölgeler ağaç katmanı olarak açılır. **M4 greybox:** `MapScreen` — ziyaret edilen oda kutuları (kök gölgesi dolgu), kapı bağlantıları (mantar ışığı çizgi), bulunulan oda altın çerçeve + elmas, Ocak altın nokta; açıkken oyun durur. |
 | **Bitig** | Yaratıklar, karakterler, mitoloji; Göktürk esintili sayfa tasarımı |
 | **Ocak ekranı** | Kayıt + dinlenme; tohum takma |
 | **Yetenek kazanma** | Tam ekran kısa an: yeteneğin adı + tek cümle + kısa gösterim animasyonu |

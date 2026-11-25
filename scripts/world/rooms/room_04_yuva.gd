@@ -7,11 +7,6 @@ extends GreyboxRoom
 
 
 func _build() -> void:
-	room_id = &"yuva"
-	display_name = "Çürük Yuvası"
-	idea = "Kamçı: kombo, savrulma saldırısı, pogo"
-	spawn_point = Vector3(-6.0, 0.5, 0.0)
-
 	backdrop(-10.0, 50.0, -6.0, 18.0, C_CAVE)
 	platform(-10.0, 12.0, 0.0, 2.0, C_BARK, 4.0)           # başlangıç zemini
 	crawler(Vector3(6.0, 0.1, 0.0), -1.0)

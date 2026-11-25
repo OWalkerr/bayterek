@@ -1,22 +1,12 @@
 extends Node3D
-## Oyun kabuğu (main.tscn kökü): ortam, oyuncu, kamera, debug HUD ve greybox oda yükleyici.
-## Odalar `scripts/world/rooms/` altında GreyboxRoom alt sınıfları; 0–3 tuşlarıyla değişir.
-## M4'te SceneRouter + gerçek Room/RoomDoor sistemiyle değiştirilecek.
+## Oyun kabuğu (main.tscn kökü): ortam, oyuncu, kamera, HUD'lar, harita ve SceneRouter'ın "host"u
+## (oda sahnesini takar/çıkarır, oyuncuyu yerleştirir). Oda geçişlerini SceneRouter yönetir.
+## Açılışta arka planda Kök Ağzı yüklenir ve menü açılır: Yeni Oyun / Devam / geliştirici odaları (0–5).
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/player.tscn")
-const ROOM_SCRIPTS: Array[Script] = [
-	preload("res://scripts/world/rooms/room_00_kok_agzi.gd"),
-	preload("res://scripts/world/rooms/room_01_savrulma.gd"),
-	preload("res://scripts/world/rooms/room_02_tirmanma.gd"),
-	preload("res://scripts/world/rooms/room_03_curuk.gd"),
-	preload("res://scripts/world/rooms/room_04_yuva.gd"),
-	preload("res://scripts/world/rooms/room_05_yanki.gd"),
-]
-const ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit",
-		"Çürük Yuvası", "Yankı Mağarası"]
-## Başlangıç odası (M0 testleri Kök Ağzı koordinatlarını kullanır).
+## Açılışta yüklenen geliştirici odası (M0–M3 testleri Kök Ağzı koordinatlarını kullanır).
 @export var start_room: int = 0
-## Can bitince oda yeniden başlamadan önce bekleme (karar 2026-11-25: oda başı + tam can).
+## Can bitince dirilmeden önce bekleme.
 @export var death_restart_delay: float = 1.2
 
 var player: Player
@@ -25,6 +15,7 @@ var hud: DebugHud
 var room: GreyboxRoom
 var room_index: int = -1
 var game_hud: GameHud
+var map_screen: MapScreen
 var _death_timer: float = -1.0
 
 
@@ -34,52 +25,99 @@ func _ready() -> void:
 	_build_camera()
 	hud = DebugHud.new()
 	add_child(hud)
-	hud.setup(player, ROOM_NAMES)
+	hud.setup(player, RoomRegistry.DEV_ROOM_NAMES)
 	hud.room_requested.connect(load_room)
+	hud.new_game_requested.connect(new_game)
+	hud.continue_requested.connect(continue_game)
 	game_hud = GameHud.new()
 	add_child(game_hud)
+	map_screen = MapScreen.new()
+	add_child(map_screen)
 	EventBus.vine_released.connect(_on_vine_released)
 	EventBus.player_died.connect(_on_player_died)
+	EventBus.game_saved.connect(func(_s: int) -> void: hud.show_save_icon())
+	EventBus.ocak_rested.connect(func(_r: StringName, _o: StringName) -> void:
+		hud.flash_message("Ocak — dinlendin, kaydedildi", 1.5))
+	EventBus.collectible_picked.connect(func(_r: StringName, _p: StringName, _k: StringName) -> void:
+		hud.flash_message("Kut parçası! (%d)" % GameState.kut_shards, 1.5))
+	SceneRouter.register_host(self)
 	load_room(start_room)
-	hud.show_room_menu(true)
+	hud.show_room_menu(true, GameState.has_save())
 
 
 func _physics_process(delta: float) -> void:
 	if _death_timer >= 0.0:
 		_death_timer -= delta
 		if _death_timer < 0.0:
-			load_room(room_index)
+			SceneRouter.respawn_at_last_ocak()
 	var moving := player.velocity.length() > 0.5 and player.is_on_floor()
 	if moving:
 		hud.start_room_timer()
 		if hud.is_room_menu_visible():
 			hud.show_room_menu(false)
-	if Input.is_action_just_pressed(&"restart_room"):
-		load_room(room_index)
+	if Input.is_action_just_pressed(&"restart_room") and room != null:
+		SceneRouter.enter_room_immediate(room.room_id)
 
 
+# ---------------------------------------------------------------- Oyun akışı
+
+## Yeni oyun: durum sıfırlanır, kayıt silinir, Ocak Odası'ndan başlanır.
+func new_game() -> void:
+	GameState.reset()
+	GameState.autosave_enabled = true
+	GameState.delete_save()
+	SceneRouter.enter_room_immediate(RoomRegistry.START_ROOM)
+	GameState.reset_health()
+	GameState.autosave()
+	hud.show_room_menu(false)
+
+
+## Devam: kayıt yüklenir, son Ocak'ta (yoksa son odanın başında) dirilinir.
+func continue_game() -> void:
+	if not GameState.load_game():
+		new_game()
+		return
+	GameState.autosave_enabled = true
+	SceneRouter.respawn_at_last_ocak()
+	hud.show_room_menu(false)
+
+
+## Geliştirici oda seçici (0–5) — kayıt almaz, canı doldurur. Testler bunu kullanır.
 func load_room(index: int) -> void:
-	index = clampi(index, 0, ROOM_SCRIPTS.size() - 1)
+	index = clampi(index, 0, RoomRegistry.DEV_ROOMS.size() - 1)
+	GameState.autosave_enabled = false
+	SceneRouter.enter_room_immediate(RoomRegistry.DEV_ROOMS[index])
+	room_index = index
+	GameState.reset_health()
+	hud.show_room_menu(false)
+
+
+# ---------------------------------------------------------------- SceneRouter host API
+
+func swap_room(packed: PackedScene) -> Room:
 	if room != null:
 		remove_child(room)
 		room.queue_free()
-	room = ROOM_SCRIPTS[index].new() as GreyboxRoom
+	room = packed.instantiate() as GreyboxRoom
 	room.name = "Room"
-	room_index = index
 	add_child(room)
 	room.goal_reached.connect(_on_goal_reached)
 	_death_timer = -1.0
-	GameState.reset_health()
-	player.place_at(room.spawn_point)
-	CameraDirector.set_room_bounds(room.bounds)
-	CameraDirector.reset_to_side()
-	hud.show_room_menu(false)
-	hud.on_room_loaded(index, room)
-	GameState.current_room = room.room_id
-	EventBus.room_changed.emit(room.room_id)
+	room_index = RoomRegistry.DEV_ROOMS.find(room.room_id)
+	hud.on_room_loaded(room_index, room)
+	return room
 
+
+func place_player(at: Vector3, velocity: Vector3) -> void:
+	player.place_at(at)
+	player.velocity = velocity
+
+
+# ---------------------------------------------------------------- Olaylar
 
 func _on_goal_reached() -> void:
+	if hud.room_time <= 0.0:
+		return
 	var key := "m1_best/%s" % room.room_id
 	var best: float = GameState.get_flag(key, 0.0)
 	if best <= 0.0 or hud.room_time < best:

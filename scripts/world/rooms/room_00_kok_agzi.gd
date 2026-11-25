@@ -5,11 +5,6 @@ extends GreyboxRoom
 
 
 func _build() -> void:
-	room_id = &"kok_agzi"
-	display_name = "Kök Ağzı"
-	idea = "Hepsinden biraz: sallanma, mağara derinliği, yukarı zincir"
-	spawn_point = Vector3(-6.0, 0.5, 0.0)
-
 	# Zeminler (üst yüzey y=0)
 	box(Vector3(-1.0, -1.0, 0.0), Vector3(18.0, 2.0, 4.0), C_BARK)     # x: -10 → 8
 	box(Vector3(34.0, -1.0, 0.0), Vector3(32.0, 2.0, 4.0), C_BARK)     # x: 18 → 50

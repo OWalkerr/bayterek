@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_00_kok_agzi.gd" id="1_room"]
+
+[node name="KokAgzi" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"kok_agzi"
+display_name = "Kök Ağzı"
+idea = "Hepsinden biraz: sallanma, mağara derinliği, yukarı zincir"
+region = &"test"
+map_cell = Vector2i(0, 0)
+map_size = Vector2i(1, 1)
+spawn_point = Vector3(-6.0, 0.5, 0.0)

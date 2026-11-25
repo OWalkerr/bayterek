@@ -58,6 +58,17 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 - **Yetenek:** Umay Tüyü (çift zıplama) — aslında oyunun ortasında gizli bir yoldan da alınabilir.
 - **Final:** Karakuş + Kalp.
 
+### Kök Dibi — mevcut greybox düzeni (M4)
+```
+ y=1   [Tırmanma ][ Yankı Mağarası ──── ]
+ y=0   [ Kuyusu  ][Ocak][ Çürük Yuvası ][ Savrulma Zinciri ][ Çürük Geçit (2×2) ]
+        x=-1      x=0   x=1–2          x=3–4               x=5–6
+```
+- **Ocak Odası** (merkez, Ocak "merkez", yeni oyun burada) → batı: Tırmanma Kuyusu (alt) · doğu: Çürük Yuvası.
+- **Tırmanma Kuyusu** (1×2) → üst kapı: Yankı Mağarası (batı girişi). Yankı Mağarası'nın arka koridoru çıkmaz; mağara köşesinde **Kut parçası** (sır).
+- **Çürük Yuvası → Savrulma Zinciri → Çürük Geçit**; Çürük Geçit'in sonunda ikinci Ocak ("gecit").
+- M5'te bu düzen gerçek Kök Dibi odalarıyla (12–15 oda) genişler; mevcut odalar eğitim bölümü olarak kalabilir.
+
 ## Yetenek Kapıları (Gating Matrisi)
 | Engel | Açan yetenek | İlk göründüğü bölge |
 |---|---|---|
@@ -78,7 +89,7 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 - **Tohumlar:** Kamçıya modifiye takılan "tılsımlar" (Hollow Knight charm sistemi benzeri, sade).
 
 ## Kayıt Noktaları — "Ocak"
-- Küçük ateş ocakları; oturunca can dolar, düşmanlar yeniden doğar, harita güncellenir.
+- Küçük ateş ocakları; yanında **W** ile oturunca can dolar, düşmanlar yeniden doğar, oyun kaydedilir (M4). Ölünce son Ocak'ta dirilinir. Harita her oda girişinde güncellenir.
 - Bölge başına 3–5 adet. Boss odasının hemen öncesinde mutlaka bir Ocak.
 
 ## Oda Tasarım Kuralları

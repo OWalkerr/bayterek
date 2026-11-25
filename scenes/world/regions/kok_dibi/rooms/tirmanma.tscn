@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_02_tirmanma.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+
+[node name="Tirmanma" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"tirmanma"
+display_name = "Tırmanma Kuyusu"
+idea = "Tırmanma sarmaşıkları arası yana zıplama, yukarı = umut"
+region = &"kok_dibi"
+map_cell = Vector2i(-1, 0)
+map_size = Vector2i(1, 2)
+spawn_point = Vector3(-2.0, 0.5, 0.0)
+
+[node name="DoorEastBottom" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.2, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"east_bottom"
+target_room = &"ocak_odasi"
+target_door = &"west"
+arrive_offset = Vector3(-1.7, 0.1, 0.0)
+
+[node name="DoorEastTop" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.2, 27.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"east_top"
+target_room = &"yanki"
+target_door = &"west"
+arrive_offset = Vector3(-1.7, 0.1, 0.0)

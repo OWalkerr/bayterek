@@ -57,3 +57,9 @@
 | 2026-11-25 | `TimeScale` autoload'u (hit-stop + geçiş yavaşlaması aracısı) | İki sistem aynı anda Engine.time_scale yazıp birbirini bozuyordu |
 | 2026-11-25 | Raya çekilme hız sınırı 12 m/s | Büyük Z farkında oyuncu bir karede 4 m ışınlanıp duvar delebiliyordu |
 | 2026-11-25 | Mağaradan farklı derinlik katmanına çıkış (SideRail) | Sütun 4: "bu dünyanın arkası da varmış" — Oda 5 arka koridor |
+| 2026-11-25 | Kayıt: Ocak'ta tam kayıt + her kapı geçişinde otomatik kayıt | Kullanıcı kararı; tarayıcı kapanınca ilerleme kaybolmasın |
+| 2026-11-25 | Ölümde son Ocak'ta tam canla dirilme | Kullanıcı kararı; docs/03 planı, Ocak'lar sık |
+| 2026-11-25 | M4'ün 6 odası = mevcut test odaları + Ocak Odası merkezi | Kullanıcı kararı; M4 altyapıya odaklanır, gerçek Kök Dibi M5'te |
+| 2026-11-25 | Her oda .tscn (kimlik, harita hücresi, kapılar) + geometri kodda | Kullanıcı kararı; editör açılmıyor, M7'de modeller aynı sahneye |
+| 2026-11-25 | Harita: MetSys yerine kendi ızgaramız (MapService, SceneState'ten okur) | MetSys 2D sahne odaklı; tek veri kaynağı oda sahneleri |
+| 2026-11-25 | Geliştirici oda seçici (0–5) web build'inde kalır, kayıt almaz | Oynanış testleri web'de; oyuncu kaydını kirletmesin |

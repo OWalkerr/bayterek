@@ -5,11 +5,6 @@ extends GreyboxRoom
 
 
 func _build() -> void:
-	room_id = &"savrulma"
-	display_name = "Savrulma Zinciri"
-	idea = "Yere basmadan sarmaşık zinciri; ritim ve mükemmel bırakma"
-	spawn_point = Vector3(-5.0, 0.5, 0.0)
-
 	backdrop(-10.0, 42.0, -6.0, 24.0)
 	platform(-10.0, 2.0, 0.0, 2.0, C_BARK, 4.0)          # başlangıç
 

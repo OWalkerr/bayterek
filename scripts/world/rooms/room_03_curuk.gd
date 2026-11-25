@@ -4,11 +4,6 @@ extends GreyboxRoom
 
 
 func _build() -> void:
-	room_id = &"curuk"
-	display_name = "Çürük Geçit"
-	idea = "Çürük sarmaşıklar: beklemek yok, akış zorunlu"
-	spawn_point = Vector3(-5.0, 0.5, 0.0)
-
 	backdrop(-10.0, 42.0, -6.0, 26.0, C_CAVE)
 	platform(-10.0, 2.0, 0.0, 2.0, C_BARK, 4.0)
 

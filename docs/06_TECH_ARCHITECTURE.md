@@ -42,7 +42,7 @@ res://
 |---|---|
 | `EventBus` | Global sinyaller (oyuncu öldü, yetenek kazanıldı, oda değişti, kamera modu…) |
 | `GameState` | Yetenekler, bayraklar (flags), toplanabilirler, kayıt/yükleme (JSON, `user://save_X.json`) |
-| `SceneRouter` | Oda yükleme/boşaltma, kapı geçişleri, ResourceLoader ile arka planda (threaded) yükleme |
+| `SceneRouter` | Oda yükleme/boşaltma, kapı geçişleri (karartma + arka planda yükleme), Ocak dinlenmesi, son Ocak'ta dirilme — M4 |
 | `TimeScale` | Zaman ölçeği aracısı: hit-stop + kamera geçiş yavaşlaması (en küçük ölçek kazanır) — M3 |
 | `PhantomCameraManager` | Phantom Camera eklentisinin autoload'u (eklenti kendi ister) — M3 |
 | `CameraDirector` | Aktif kamera modu, geçişler, girdi sürekliliği, oda sınırları; CameraRig'i yönetir |
@@ -50,7 +50,7 @@ res://
 | `AudioDirector` | Bölge müziği katmanları, crossfade, SFX havuzu |
 | `Settings` | Grafik, ses, kontrol ayarları (`user://settings.cfg`) |
 
-> M3 itibarıyla `InputSetup`, `EventBus`, `GameState`, `TimeScale`, `PhantomCameraManager`, `CameraDirector` hazır; diğerleri M4–M9 arasında eklenir. Sıra önemli: `PhantomCameraManager`, `CameraDirector`'dan önce yüklenir.
+> M4 itibarıyla `InputSetup`, `EventBus`, `GameState`, `TimeScale`, `PhantomCameraManager`, `CameraDirector`, `SceneRouter` hazır; diğerleri M5–M9 arasında eklenir. Sıra önemli: `PhantomCameraManager`, `CameraDirector`'dan önce yüklenir.
 
 ## Kamera Mimarisi (M3)
 ```
@@ -92,12 +92,23 @@ Enemy (CharacterBody3D) ── enemy.gd  katman "enemy" (3), maske "world"
 ```
 Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Tehlike alanları (`SporeCloud`) katman "hazard" (5).
 
-## Oda (Room) Sistemi
-- Her oda ayrı `.tscn`; kök düğüm `Room` (`room.gd`): `room_id`, `bounds: AABB`, `region`, `map_cell: Vector2i`.
-- Kapılar `RoomDoor` (Area3D): hedef oda + hedef kapı id.
-- Odalar arası geçiş: kısa karartma (0.25 sn), yeni oda arka planda yüklenir, oyuncu hedef kapıya konur.
-- Harita: Metroidvania harita verisi `map_cell` ile üretilir. [MetSys](https://github.com/KoBeWi/Metroidvania-System) 2D sahne odaklı olduğu için M4'te değerlendirilecek; uymazsa `Vector2i` grid tabanlı kendi `MapService`'imiz.
-- Oda durumu (kırılan duvar, açılan kapı, alınan eşya) `GameState.flags["room_id/obj_id"]` olarak kalıcı.
+## Oda (Room) Sistemi (M4 — uygulandı)
+- **Her oda ayrı `.tscn`** (`scenes/world/regions/<bölge>/rooms/<oda_id>.tscn`). Kök düğüm script'i odanın greybox script'i (`scripts/world/rooms/room_XX_*.gd`, `GreyboxRoom` → `Room`). Sahnede: `room_id`, `display_name`, `idea`, `region`, `map_cell`, `map_size`, `spawn_point`, (isteğe bağlı) `bounds` + kapı/Ocak/toplanabilir düğümleri. Geometri şimdilik kodda (`_build()`); M7'de modeller aynı .tscn'e eklenir (karar 2026-11-25).
+- `RoomRegistry` (`scripts/world/room_registry.gd`): oda kimliği → sahne yolu, `START_ROOM`, geliştirici oda listesi. **Yeni oda = .tscn + registry satırı.**
+- Kapılar `RoomDoor` (Area3D, maske "player"): `door_id`, `target_room`, `target_door`, `arrive_offset` (bu kapıdan GİRİLİRKEN oyuncunun konacağı nokta, odanın içine doğru ≥ 1.5 m — kapı alanının dışında olmalı ki geri sekmesin). Kapı düğümü eşiğin alt ortasında; alan yukarı 3 m.
+- `SceneRouter` (autoload): kapı geçişi = karartma 0.25 sn → `ResourceLoader.load_threaded_request` ile arka planda yükleme (web'de tek iş parçacığında da çalışır) → `host.swap_room()` → oyuncu hedef kapıya **hızı korunarak** → `GameState.enter_room()` + otomatik kayıt → kamera sınırı/SIDE → aydınlanma. Ayrıca `enter_room_immediate()` (yeni oyun, devam, geliştirici seçici), `respawn_at_last_ocak()`, `rest_at_ocak()`. Host = `main.tscn` kabuğu (`greybox_level.gd`).
+- **Ocak** (`scripts/world/ocak.gd`): yanında yerdeyken W → dinlen: can dolar, son Ocak işaretlenir, tam kayıt, oda yeniden yüklenir (düşmanlar yeniden doğar). Ölümde son Ocak'ta tam canla dirilinir; hiç Ocak yoksa mevcut odanın başında.
+- Oda durumu kalıcılığı: `GameState.flags["oda_id/nesne_id"]` (`Room.flag_key()`); örnek `Collectible` (Kut parçası) bir kez alınır, bir daha doğmaz. Normal düşmanlar odaya her girişte yeniden doğar.
+- **Harita:** MetSys yerine kendi ızgaramız (karar 2026-11-25). `MapService` oda sahnelerini örneklemeden `SceneState`'ten okur (hücre, boyut, Ocak, kapılar). `MapScreen` (Tab / Select) yalnızca ziyaret edilen odaları, kapı bağlantılarını, bulunulan odayı ve Ocak'ları çizer; açıkken oyun duraklar.
+
+### Kayıt (GameState, `user://save_<yuva>.json`, sürüm 2)
+| Ne zaman | Ne |
+|---|---|
+| Ocak'ta dinlenme | Tam kayıt + son Ocak (oda + kimlik) |
+| Her kapı geçişi | Otomatik kayıt (ziyaret edilen odalar, bayraklar, mevcut oda) |
+| Toplanabilir alınca | Otomatik kayıt |
+| Geliştirici oda seçici (0–5) | **Kayıt yok** (`autosave_enabled = false`) |
+İçerik: yetenekler, bayraklar, ziyaret edilen odalar, Kut/Öz, can, mevcut oda, son Ocak. Web'de `user://` tarayıcının IndexedDB'sidir. Testler 99 numaralı yuvayı kullanır. `to_dict()` bayrakların **kopyasını** döndürür (sıfırlama anlık görüntüyü bozmasın).
 
 ## Kodlama Kuralları
 - Tanımlayıcılar **İngilizce** (`swing_angle`, `VineAnchor`), yorumlar ve dokümanlar **Türkçe**.
@@ -115,6 +126,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `test_movement.tscn` | M0 duman testi: koşma, zıplama, sallanma, mağara kamerası, güvenli nokta |
   | `test_m1.tscn` | Coyote, jump buffer, tırmanma, çürük sarmaşık, mükemmel bırakma + **bot ile 3 odanın geçilmesi** |
   | `test_m3.tscn` | Arka uç, mod geçişi (konum/FOV), geçiş yavaşlaması, girdi sürekliliği, SideRail (arka koridor + Z=0'a 0.4 sn), oda sınırları, look-ahead, ölü bölge, düşüşte dikey odak, **bot ile mağara odası** |
+  | `test_m4.tscn` | Harita verisi (karşılıklı kapılar, çakışmayan hücreler, erişilebilirlik), yeni oyun, kapı geçişi (hız + kayıt), **tüm kapıların fiziksel varışı**, Ocak, ölümde son Ocak, kalıcı toplanabilir, kayıt turu, Devam, harita ekranı |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
@@ -124,7 +136,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 - İki kamera arka ucu: `BAYTEREK_CAMERA_BACKEND=rig` ile tüm testler yedek blend'le de koşulur (milestone sonunda ikisi de yeşil olmalı).
 - Her milestone sonunda web export alınır: `tools/deploy_web.sh "mesaj"` → `build/web/` → `gh-pages` dalı (main'e build girmez). Oynanabilir link: https://owalkerr.github.io/bayterek/
 
-## Geliştirme Kısayolları (M1–M3, M4'te kalkar)
+## Geliştirme Kısayolları (web test build'inde kalır)
 | Tuş | İşlev |
 |---|---|
 | 0–5 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası, Yankı Mağarası) |
@@ -133,9 +145,9 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 | F2 | Canlı tuning paneli (kaydırıcılar, "Kopyala" → .tres metni) |
 
 ## Greybox Oda Altyapısı (M1)
-- `scripts/world/greybox_level.gd` (main.tscn kökü): ortam, oyuncu, CameraRig, DebugHud ve oda yükleyici (`load_room(i)`).
+- `scripts/world/greybox_level.gd` (main.tscn kökü): ortam, oyuncu, CameraRig, HUD'lar, harita; SceneRouter host'u (`swap_room`, `place_player`); menü akışı (`new_game`, `continue_game`, geliştirici `load_room(i)`).
 - `scripts/world/greybox_room.gd` (`GreyboxRoom`): kodla oda kurma yardımcıları (`box`, `platform`, `vine`, `rotten_vine`, `climb_vine`, `crawler`, `bloater`, `glow`, `place_goal`, `camera_zone`, `side_rail`) + kamera sınırı (`bounds`, otomatik `compute_bounds()`).
-- `scripts/world/rooms/room_XX_*.gd`: test odaları. Her oda `room_id`, `display_name`, `idea` ("bir oda = bir fikir"), `spawn_point` ve bir `RoomGoal` tanımlar.
+- `scripts/world/rooms/room_XX_*.gd`: odaların geometrisi; kimlik/kapılar .tscn'de. M1–M3 test odalarında `RoomGoal` kristali (botlar ve oda süresi için) kalır.
 - `scripts/ui/`: `DebugHud`, `TuningPanel`, `UiStyle` (docs/08 paleti). `scripts/fx/`: `ReleaseSpark`.
 
 ## Performans Bütçesi (PC orta seviye / web)

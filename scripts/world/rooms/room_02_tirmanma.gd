@@ -4,15 +4,12 @@ extends GreyboxRoom
 
 
 func _build() -> void:
-	room_id = &"tirmanma"
-	display_name = "Tırmanma Kuyusu"
-	idea = "Tırmanma sarmaşıkları arası yana zıplama, yukarı = umut"
-	spawn_point = Vector3(-2.0, 0.5, 0.0)
-
 	backdrop(-6.0, 16.0, -1.0, 34.0)
 	platform(-6.0, 16.0, 0.0, 2.0, C_BARK, 4.0)           # kuyu tabanı
 	box(Vector3(-5.5, 16.0, 0.0), Vector3(1.0, 34.0, 4.0), C_ROOT)   # sol duvar
-	box(Vector3(15.5, 16.0, 0.0), Vector3(1.0, 34.0, 4.0), C_ROOT)   # sağ duvar
+	# Sağ duvarda iki kapı açıklığı: alt (y 0→3, Ocak Odası) ve üst (y 27→30, Yankı Mağarası)
+	box(Vector3(15.5, 15.0, 0.0), Vector3(1.0, 24.0, 4.0), C_ROOT)   # sağ duvar y 3 → 27
+	box(Vector3(15.5, 31.5, 0.0), Vector3(1.0, 3.0, 4.0), C_ROOT)    # sağ duvar y 30 → 33
 
 	climb_vine(Vector3(0.0, 8.0, 0.0), 7.0)               # A: y 1 → 8
 	climb_vine(Vector3(4.5, 13.0, 0.0), 7.0)              # B: y 6 → 13

@@ -4,8 +4,11 @@ extends CanvasLayer
 ## mükemmel bırakma bildirimi. Oyun HUD'u (yapraklar, Öz) M2'de ayrı gelir (docs/08).
 
 signal room_requested(index: int)
+signal new_game_requested
+signal continue_requested
 
 const MESSAGE_TIME: float = 2.5
+const SAVE_ICON_TIME: float = 1.5
 
 var player: Player
 var _info: Label
@@ -13,6 +16,9 @@ var _message: Label
 var _message_timer: float = 0.0
 var _tuning: TuningPanel
 var _room_menu: PanelContainer
+var _continue_button: Button
+var _save_label: Label
+var _save_timer: float = 0.0
 var _room_names: PackedStringArray = []
 var _room_title: Label
 var _timer_label: Label
@@ -71,12 +77,21 @@ func is_room_menu_visible() -> bool:
 	return _room_menu.visible
 
 
-func show_room_menu(value: bool) -> void:
+func show_room_menu(value: bool, has_save: bool = false) -> void:
 	_room_menu.visible = value
+	if value:
+		_continue_button.visible = has_save
+
+
+## Kayıt alındığında sağ altta kısa "Kaydedildi" ipucu.
+func show_save_icon() -> void:
+	_save_label.modulate.a = 1.0
+	_save_timer = SAVE_ICON_TIME
 
 
 func on_room_loaded(index: int, room: GreyboxRoom) -> void:
-	_room_title.text = "%d · %s — %s" % [index, room.display_name, room.idea]
+	var prefix := "%d · " % index if index >= 0 else ""
+	_room_title.text = "%s%s — %s" % [prefix, room.display_name, room.idea]
 	room_time = 0.0
 	room_running = false
 	room_finished = false
@@ -93,7 +108,7 @@ func on_goal(best: float) -> void:
 	var text := "Hedef! %.2f sn" % room_time
 	if best > 0.0:
 		text += "   (en iyi %.2f)" % best
-	flash_message(text + "\nR: tekrar · 0–5: oda seç", 5.0)
+	flash_message(text + "\nR: tekrar · 0–5: oda seç · kapıdan devam et", 5.0)
 
 
 func flash_message(text: String, duration: float = MESSAGE_TIME) -> void:
@@ -111,8 +126,14 @@ func _build_room_menu() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override(&"separation", 8)
 	_room_menu.add_child(box)
-	box.add_child(UiStyle.label("BAYTEREK — Greybox Test Odaları", 30, UiStyle.SAP_GOLD))
-	box.add_child(UiStyle.label("Tuşla (0–5) veya tıklayarak seç. Hareket edince menü kapanır.",
+	box.add_child(UiStyle.label("BAYTEREK", 34, UiStyle.SAP_GOLD))
+	var new_game := UiStyle.button("Yeni Oyun — Kök Dibi")
+	new_game.pressed.connect(func() -> void: new_game_requested.emit())
+	box.add_child(new_game)
+	_continue_button = UiStyle.button("Devam (son Ocak)")
+	_continue_button.pressed.connect(func() -> void: continue_requested.emit())
+	box.add_child(_continue_button)
+	box.add_child(UiStyle.label("Geliştirici test odaları — tuşla (0–5) veya tıkla; hareket edince menü kapanır",
 			UiStyle.FONT_SIZE_SMALL))
 	for i in _room_names.size():
 		var b := UiStyle.button("%d · %s" % [i, _room_names[i]])
@@ -121,9 +142,18 @@ func _build_room_menu() -> void:
 	box.add_child(UiStyle.label(
 			"A/D hareket · Space zıpla/bırak · W/S ip kısalt-uzat, tırman\n" \
 			+ "J / sol tık kamçı (W+J yukarı, havada S+J aşağı = pogo)\n" \
+			+ "Ocak yanında W: dinlen/kaydet · Tab harita\n" \
 			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning",
 			UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM))
 	add_child(_room_menu)
+	_save_label = UiStyle.label("Kaydedildi", UiStyle.FONT_SIZE_SMALL, UiStyle.SAP_GOLD)
+	_save_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	_save_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_save_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_save_label.offset_right = -24.0
+	_save_label.offset_bottom = -20.0
+	_save_label.modulate.a = 0.0
+	add_child(_save_label)
 
 
 func _process(delta: float) -> void:
@@ -140,6 +170,10 @@ func _process(delta: float) -> void:
 	if room_running:
 		room_time += delta
 	_timer_label.text = "%.2f sn" % room_time
+
+	if _save_timer > 0.0:
+		_save_timer -= delta
+		_save_label.modulate.a = clampf(_save_timer / 0.5, 0.0, 1.0)
 
 	if _message_timer > 0.0:
 		_message_timer -= delta
@@ -161,7 +195,7 @@ func _info_text() -> String:
 	lines.append("Can: %d/%d   Kombo: %d   Saldırı: %s" % [GameState.leaves, GameState.max_leaves,
 			combat.combo_index + 1, PlayerCombat.KIND_NAMES[combat.kind] if combat.is_attacking() else "-"])
 	if player.is_swinging():
-		var window := "  ★ MÜKEMMEL PENCERE" if player.is_in_perfect_window() else ""
+		var window := "  * MÜKEMMEL PENCERE" if player.is_in_perfect_window() else ""
 		lines.append("Sarkaç: θ %.0f°  ω %.2f rad/sn  L %.2f m%s" % [
 				rad_to_deg(player.get_swing_angle()), player.get_swing_omega(),
 				player.get_rope_length(), window])

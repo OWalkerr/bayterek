@@ -102,7 +102,7 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 - **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır. *(M5+)*
 - **Hasar alma:** 0.8 sn dokunulmazlık (yanıp sönme), 0.25 sn kontrolsüz geri itilme (6 m/s yatay, 5 m/s yukarı).
 - **Çukura düşüş:** Son güvenli noktaya dönüş + **1 yaprak** (karar 2026-11-25), geri itilme yok.
-- **Ölüm (0 yaprak):** "Alpay düştü…" → 1.2 sn sonra **oda baştan, tam can**, düşmanlar yeniden doğar (karar 2026-11-25). M4'te "son Ocak'a dön" olur.
+- **Ölüm (0 yaprak):** "Alpay düştü…" → 1.2 sn sonra **son Ocak'ta tam canla** (M4, karar 2026-11-25); hiç Ocak'ta dinlenilmediyse mevcut odanın başında. Düşmanlar oda yeniden yüklendiği için yeniden doğar.
 - **Hit-stop:** Vuruşta 50 ms, boss'a kritik vuruşta 100 ms; kamera titremesi küçük.
 
 ## 4. Yetenek Ağacı (kazanılma sırası)
@@ -144,7 +144,8 @@ Mağaraya girince veya özel tetikleyicide kamera karakterin arkasına döner:
 | Kanca / Öz Çekimi | RT | K / Sağ tık |
 | Tutun / Bırak | LT (veya otomatik) | Shift |
 | İyileş | B / Daire (basılı) | L |
-| Harita | Select | Tab |
+| Harita | Select | Tab (M4) |
+| Ocak'ta dinlen | Yukarı | W (Ocak yanında, yerdeyken) |
 | Duraklat | Start | Esc |
 
 **Otomatik tutunma** varsayılan açık: havadayken tutunma yarıçapındaki sarmaşık otomatik yakalanır; bırakmak için zıpla. Ayarlardan "manuel tutunma"ya geçilebilir.

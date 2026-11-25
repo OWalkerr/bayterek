@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_03_curuk.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+[ext_resource type="Script" path="res://scripts/world/ocak.gd" id="3_ocak"]
+
+[node name="Curuk" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"curuk"
+display_name = "Çürük Geçit"
+idea = "Çürük sarmaşıklar: beklemek yok, akış zorunlu"
+region = &"kok_dibi"
+map_cell = Vector2i(5, 0)
+map_size = Vector2i(2, 2)
+spawn_point = Vector3(-5.0, 0.5, 0.0)
+
+[node name="DoorWest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"west"
+target_room = &"savrulma"
+target_door = &"east"
+arrive_offset = Vector3(1.5, 0.1, 0.0)
+
+[node name="Ocak" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38.5, 19.5, 0.0)
+script = ExtResource("3_ocak")
+ocak_id = &"gecit"
