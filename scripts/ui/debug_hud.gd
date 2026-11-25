@@ -108,7 +108,7 @@ func on_goal(best: float) -> void:
 	var text := "Hedef! %.2f sn" % room_time
 	if best > 0.0:
 		text += "   (en iyi %.2f)" % best
-	flash_message(text + "\nR: tekrar · 0–5: oda seç · kapıdan devam et", 5.0)
+	flash_message(text + "\nR: tekrar · 0–7: oda seç · kapıdan devam et", 5.0)
 
 
 func flash_message(text: String, duration: float = MESSAGE_TIME) -> void:
@@ -133,7 +133,7 @@ func _build_room_menu() -> void:
 	_continue_button = UiStyle.button("Devam (son Ocak)")
 	_continue_button.pressed.connect(func() -> void: continue_requested.emit())
 	box.add_child(_continue_button)
-	box.add_child(UiStyle.label("Geliştirici test odaları — tuşla (0–5) veya tıkla; hareket edince menü kapanır",
+	box.add_child(UiStyle.label("Geliştirici test odaları — tuşla (0–7) veya tıkla; hareket edince menü kapanır",
 			UiStyle.FONT_SIZE_SMALL))
 	for i in _room_names.size():
 		var b := UiStyle.button("%d · %s" % [i, _room_names[i]])

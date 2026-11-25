@@ -117,7 +117,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 | Ocak'ta dinlenme | Tam kayıt + son Ocak (oda + kimlik) |
 | Her kapı geçişi | Otomatik kayıt (ziyaret edilen odalar, bayraklar, mevcut oda) |
 | Toplanabilir alınca | Otomatik kayıt |
-| Geliştirici oda seçici (0–5) | **Kayıt yok** (`autosave_enabled = false`) |
+| Geliştirici oda seçici (0–7) | **Kayıt yok** (`autosave_enabled = false`) |
 İçerik: yetenekler, bayraklar, ziyaret edilen odalar, Kut/Öz, can, mevcut oda, son Ocak. Web'de `user://` tarayıcının IndexedDB'sidir. Testler 99 numaralı yuvayı kullanır. `to_dict()` bayrakların **kopyasını** döndürür (sıfırlama anlık görüntüyü bozmasın).
 
 ## Kodlama Kuralları
@@ -152,7 +152,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 ## Geliştirme Kısayolları (web test build'inde kalır)
 | Tuş | İşlev |
 |---|---|
-| 0–5 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası, Yankı Mağarası) |
+| 0–7 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası, Yankı Mağarası, **6 Kökyiyen Eşiği**, **7 Kökyiyen'in İni**). 6–7 Kamçı Kancası'nı verir ve boss bayrağını sıfırlar (her seferinde yeniden dövüş) |
 | R | Odayı baştan başlat |
 | F1 | Debug bilgisi (durum, konum, coyote/buffer, θ/ω/L, mükemmel pencere) |
 | F2 | Canlı tuning paneli (kaydırıcılar, "Kopyala" → .tres metni) |

@@ -72,3 +72,4 @@
 | 2026-11-25 | Faz 3 kovalamaca öldürmez: hasar + fırlatma + ağız geri çekilir; zemin ağız gelince kırılır | Kullanıcı Claude'a bıraktı; "ölüm cezası düşük" kuralı, ölüm döngüsünü önler |
 | 2026-11-25 | Boss zorluğu: bot denemeleriyle başlangıç ayarı, sonra kullanıcı denemeleri | Kullanıcı kararı; bot alt sınır verir, tüm sayılar @export |
 | 2026-11-25 | Oyun dili başlangıçta TranslationServer ile "tr"; çeviriler project.godot'a kayıtlı | tr() anahtarları ham dönüyordu |
+| 2026-11-25 | Geliştirici seçiciye boss odaları (6 Eşiği, 7 İn) eklendi; kanca verilir, boss bayrağı sıfırlanır | Kullanıcı Yeni Oyun'da boss'u bulamadı (8 oda ötede); boss denemeleri doğrudan yapılabilsin |

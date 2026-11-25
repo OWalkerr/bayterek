@@ -165,6 +165,16 @@ func _test_phases_and_chase() -> void:
 	SceneRouter.enter_room_immediate(ROOM)
 	await _frames(3)
 	_check("yenilen boss geri gelmiyor", (_room() as Node).get(&"boss") == null, "")
+	# Geliştirici seçici (7): boss yeniden dövüşülebilir, kanca verilir
+	GameState.abilities.clear()
+	_level.call(&"load_room", 7)
+	await _frames(3)
+	var again := (_room() as Node).get(&"boss") as Rooteater
+	_check("geliştirici 7: boss yeniden hazır + kanca verildi", again != null and again.phase == Rooteater.Phase.DORMANT \
+			and GameState.has_ability(G), "")
+	_level.call(&"load_room", 6)
+	await _frames(3)
+	_check("geliştirici 6: Kökyiyen Eşiği", _room().room_id == &"kokyiyen_esigi", "")
 
 
 func _kill_sac(boss: Rooteater) -> void:

@@ -23,10 +23,19 @@ const ROOMS: Dictionary = {
 	&"kok_agzi": "res://scenes/world/regions/test/rooms/kok_agzi.tscn",
 }
 
-## Geliştirici oda seçicinin (0–5 tuşları) sırası — M1–M3 testleri bu indeksleri kullanır.
-const DEV_ROOMS: Array[StringName] = [&"kok_agzi", &"savrulma", &"tirmanma", &"curuk", &"yuva", &"yanki"]
+## Geliştirici oda seçicinin (0–7 tuşları) sırası — M1–M3 testleri bu indeksleri kullanır.
+## 6–7: boss'u doğrudan denemek için (normal oyunda Kök Dibi'nin sonunda, 8 oda ötede).
+const DEV_ROOMS: Array[StringName] = [&"kok_agzi", &"savrulma", &"tirmanma", &"curuk", &"yuva", &"yanki",
+		&"kokyiyen_esigi", &"kokyiyen_ini"]
 const DEV_ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit",
-		"Çürük Yuvası", "Yankı Mağarası"]
+		"Çürük Yuvası", "Yankı Mağarası", "Kökyiyen Eşiği (boss öncesi)", "Kökyiyen'in İni (boss)"]
+## Geliştirici seçiciyle girilince verilecek yetenekler (o noktaya normal oyunda sahip olunanlar)
+## ve sıfırlanacak bayraklar (boss her denemede yeniden dövüşülebilsin).
+const DEV_GRANTS: Dictionary = {
+	&"kokyiyen_esigi": [&"whip_grapple"],
+	&"kokyiyen_ini": [&"whip_grapple"],
+}
+const DEV_RESET_FLAGS: Array[String] = ["kokyiyen_ini/boss_defeated"]
 
 
 static func has_room(room_id: StringName) -> bool:

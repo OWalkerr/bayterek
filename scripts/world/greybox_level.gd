@@ -1,7 +1,7 @@
 extends Node3D
 ## Oyun kabuğu (main.tscn kökü): ortam, oyuncu, kamera, HUD'lar, harita ve SceneRouter'ın "host"u
 ## (oda sahnesini takar/çıkarır, oyuncuyu yerleştirir). Oda geçişlerini SceneRouter yönetir.
-## Açılışta arka planda Kök Ağzı yüklenir ve menü açılır: Yeni Oyun / Devam / geliştirici odaları (0–5).
+## Açılışta arka planda Kök Ağzı yüklenir ve menü açılır: Yeni Oyun / Devam / geliştirici odaları (0–7).
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/player.tscn")
 ## Açılışta yüklenen geliştirici odası (M0–M3 testleri Kök Ağzı koordinatlarını kullanır).
@@ -94,11 +94,16 @@ func continue_game() -> void:
 	hud.show_room_menu(false)
 
 
-## Geliştirici oda seçici (0–5) — kayıt almaz, canı doldurur. Testler bunu kullanır.
+## Geliştirici oda seçici (0–7) — kayıt almaz, canı doldurur. Testler bunu kullanır.
 func load_room(index: int) -> void:
 	index = clampi(index, 0, RoomRegistry.DEV_ROOMS.size() - 1)
 	GameState.autosave_enabled = false
-	SceneRouter.enter_room_immediate(RoomRegistry.DEV_ROOMS[index])
+	var id: StringName = RoomRegistry.DEV_ROOMS[index]
+	for ability: StringName in RoomRegistry.DEV_GRANTS.get(id, []):
+		GameState.unlock_ability(ability)
+	for key: String in RoomRegistry.DEV_RESET_FLAGS:
+		GameState.flags.erase(key)
+	SceneRouter.enter_room_immediate(id)
 	room_index = index
 	GameState.reset_health()
 	hud.show_room_menu(false)

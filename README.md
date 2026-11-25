@@ -14,7 +14,9 @@ Kökler arasında büyümüş yetim **Alpay**, sarmaşık kamçısıyla Hayat A�
 
 Menüden **Yeni Oyun** → Kök Dibi: 13 oda. Doğuya ilerle, Sunak Odası'nda **Kamçı Kancası**'nı al (K / sağ tık), kanca çiçekleriyle Kanca Bahçesi ve Çiçek Kuyusu'nu aşıp Kökyiyen Eşiği'ne ulaş ve **Kökyiyen**'i yen (3D arena + kovalamaca; ödül: Kut parçası + Kocabaş'ın mesajı); sonra Ocak Odası'na dönüp tavandaki çiçekle Üst Kökler'e çık ve duvarın sırrını bul. Ocak'ta (W) dinlen/kaydet; **L** basılı = Öz'le iyileş; **Tab** harita; 2 Kut parçası.
 
-Geliştirici test odaları (0–5 tuşu, kayıt almaz):
+**Boss'u doğrudan denemek için:** menüde **6 · Kökyiyen Eşiği** ya da **7 · Kökyiyen'in İni** (veya 6 / 7 tuşu) — kanca verilir, boss her seferinde yeniden dövüşülür.
+
+Geliştirici test odaları (0–7 tuşu, kayıt almaz):
 - **0 Kök Ağzı** — M0 prototipi: sallanma, mağarada 3D derinlik kamerası, yukarı zincir
 - **1 Savrulma Zinciri** — yere basmadan yükselen sarmaşık zinciri, mükemmel bırakma
 - **2 Tırmanma Kuyusu** — tırmanma sarmaşıkları arası yana zıplama
