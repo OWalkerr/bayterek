@@ -77,6 +77,12 @@
 - **İlk adım = kıyas:** Alpay'ı iki araçta da üret → ikisini repoya yükle → `model_check` ölçer → kararı sayılarla ver.
 - Stil tutarlılığını **araç değil ortak shader** sağlar (`stylized_lit`); yine de bölge başına tek araç tercih et.
 
+### Tripo çıktısı — bilinen durumlar (Alpay'dan öğrenilen, 2026-11-25)
+- **Ölçek:** Tripo modeli **1 birim yüksekliğe normalize** ederek dışa aktarır → Godot'da `.glb.import` içinde `nodes/root_scale` = gerçek boy (Alpay: **1.6**). Blender gerekmez; `model_check` boyu doğrular.
+- **Yön:** iskelet −90° döndürülmüş bir ara düğümün (`node_0`) altında; sonuç +Z'ye bakıyor (doğru). `ModelValidator` artık üst düğüm dönüşlerini hesaba katıyor.
+- **İskelet:** Mixamo adları (`mixamorig_*`, 55 kemik) → Mixamo animasyonları doğrudan uyar. Dosyada animasyon klibi yok (Mixamo'dan gelecek).
+- Alpay: 18 988 üçgen, 1 materyal, 2048 doku — bütçe içinde. Meshy kıyas modeli (`char_alpay_meshy.glb`, 10k üçgen, 1.7 m, Running/Walking klipli) referans olarak repoda kalır, web build'den hariç (`*_meshy.glb`).
+
 ### Üretim akışı (her model)
 1. **Konsept görsel** (Gemini / Midjourney / ChatGPT görsel): aşağıdaki prompt + sabit stil eki. Tek nesne, düz gri arka plan, karakterlerde **T-poz / A-poz**, önden veya 3/4.
 2. **Görselden 3D** (Tripo "Image to 3D" önerilir — metinden daha tutarlı):
@@ -100,7 +106,7 @@ single object, centered, plain neutral grey background, full body, no shadow on 
 ### Model listesi (dikey dilim) ve prompt'lar
 | Dosya | Klasör | Boy | Üçgen hedefi | Doku | Rig | Konsept prompt (İngilizce, araçlar daha iyi anlar) |
 |---|---|---|---|---|---|---|
-| `char_alpay.glb` | characters/alpay | 1.6 m | 20k | 2048 | İnsansı (Mixamo) | `teenage boy, 16 years old, lean and agile, barefoot, clothes woven from roots and leaves, a silver feather necklace glowing softly, living vine whip coiled on his shoulder, wild dark hair, A-pose, front view` |
+| `char_alpay_tripo.glb` ✅ (oyunda) | characters/alpay | 1.6 m | 20k | 2048 | İnsansı (Mixamo) | `teenage boy, 16 years old, lean and agile, barefoot, clothes woven from roots and leaves, a silver feather necklace glowing softly, living vine whip coiled on his shoulder, wild dark hair, A-pose, front view` |
 | `npc_kocabas.glb` | characters/kocabas | ~3 m | 12k | 1024 | Dört ayaklı | `giant ancient root turtle, wise and gentle, mossy shell overgrown with roots and tiny glowing mushrooms, long neck, kind old eyes, slow and heavy, side 3/4 view` |
 | `enm_rot_crawler.glb` | enemies | 0.6 m | 8k | 1024 | Dört ayaklı (alçak) | `small corrupted root lizard, low crawling body, purple rot veins, glowing sickly yellow eyes, bark-like scales, menacing but readable, side 3/4 view` |
 | `enm_spore_bloater.glb` | enemies | 1 m | 5k | 1024 | **Rigsiz** (shader ile nefes) | `floating bloated spore sac creature, round translucent purple membrane, glowing yellow spore spots, small dangling tendrils, cute but dangerous` |

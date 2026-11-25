@@ -135,7 +135,7 @@ static func measure(root: Node3D) -> Dictionary:
 		for bone: String in HUMANOID_BONES:
 			if _find_bone(skeleton, bone) < 0:
 				missing.append(bone)
-		facing = _facing_from_skeleton(skeleton)
+		facing = _facing_from_skeleton(skeleton, _relative_transform(root, skeleton).basis)
 	return {"triangles": tris, "meshes": meshes, "materials": materials.size(), "max_texture": max_tex,
 			"aabb": aabb, "height": aabb.size.y, "has_skeleton": skeleton != null,
 			"bones": skeleton.get_bone_count() if skeleton != null else 0,
@@ -186,13 +186,14 @@ static func _find_bone(skeleton: Skeleton3D, bone: String) -> int:
 	return -1
 
 
-## Ayak → parmak (ToeBase) vektörünün yönü = bakış yönü. Yoksa "?".
-static func _facing_from_skeleton(skeleton: Skeleton3D) -> String:
+## Ayak → parmak (ToeBase) vektörünün yönü = bakış yönü (modelin kök uzayında; iskeletin üst
+## düğümlerindeki dönüşler dahil — ör. Tripo iskeleti -90° döndürülmüş bir düğümün altına koyar). Yoksa "?".
+static func _facing_from_skeleton(skeleton: Skeleton3D, to_root: Basis = Basis.IDENTITY) -> String:
 	var foot := _find_bone(skeleton, "LeftFoot")
 	var toe := _find_bone(skeleton, "LeftToeBase")
 	if foot < 0 or toe < 0:
 		return "?"
-	var d := skeleton.get_bone_global_rest(toe).origin - skeleton.get_bone_global_rest(foot).origin
+	var d := to_root * (skeleton.get_bone_global_rest(toe).origin - skeleton.get_bone_global_rest(foot).origin)
 	var flat := Vector2(d.x, d.z)
 	if flat.length() < 0.001:
 		return "?"

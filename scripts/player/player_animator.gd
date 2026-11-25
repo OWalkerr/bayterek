@@ -20,6 +20,8 @@ const LAND_TIME: float = 0.12
 var player: Player
 var current: StringName = &"idle"
 var model_player: AnimationPlayer = null
+## Visual/Model (AI modeli) — yoksa null (kapsül greybox).
+var model: Node3D = null
 
 var _body: Node3D
 var _was_on_floor: bool = true
@@ -32,11 +34,20 @@ var _base_pos: Vector3 = Vector3.ZERO
 func _ready() -> void:
 	player = get_parent() as Player
 	var visual := player.get_node(^"Visual") as Node3D
-	_body = visual.get_node_or_null(^"Body") as Node3D
+	var capsule := visual.get_node_or_null(^"Body") as Node3D
+	model = visual.get_node_or_null(^"Model") as Node3D
+	if model != null:
+		# Gerçek model var: kapsül görseli gizlenir (çarpışma kapsülü kalır, docs/07 §6.5)
+		for n: String in ["Body", "FacingMarker"]:
+			var c := visual.get_node_or_null(NodePath(n)) as Node3D
+			if c != null:
+				c.visible = false
+		model_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	# Klip yoksa yordamsal poz modele (yoksa kapsüle) uygulanır
+	_body = model if model != null else capsule
 	if _body != null:
 		_base_scale = _body.scale
 		_base_pos = _body.position
-	model_player = visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
 
 
 ## Durumdan mantıksal animasyon adı (saf fonksiyon; testler doğrudan çağırır).
@@ -81,8 +92,17 @@ func _process(delta: float) -> void:
 	if next != current:
 		current = next
 		_play_model(next)
-	if model_player == null and _body != null:
+	if not _model_has_clip(current) and _body != null:
 		_procedural(delta)
+
+
+## Yordamsal pozun uygulandığı düğüm (model ya da kapsül).
+func get_procedural_target() -> Node3D:
+	return _body
+
+
+func _model_has_clip(anim: StringName) -> bool:
+	return model_player != null and model_player.has_animation(clip_map.get(anim, anim))
 
 
 func _play_model(anim: StringName) -> void:

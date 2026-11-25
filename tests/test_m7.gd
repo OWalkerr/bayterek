@@ -27,6 +27,7 @@ func _run() -> void:
 	await _test_enemy_flash()
 	_test_environment()
 	_test_validator()
+	_test_player_model()
 	await _test_animator()
 	print("[TEST] bitti — başarısız: %d" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -198,6 +199,18 @@ func _fake_model(height: float, tris: int, skeleton: bool, toe_dir: Vector3, ori
 
 # ---------------------------------------------------------------- Animasyon
 
+func _test_player_model() -> void:
+	var anim := _player.animator
+	var model := anim.model
+	_check("model: Alpay (Tripo) Player/Visual/Model altında", model != null, "")
+	if model == null:
+		return
+	_check("model: kapsül görseli gizli", not (_player.get_node(^"Visual/Body") as Node3D).visible, "")
+	var r := ModelValidator.validate_scene(model, "char_alpay_tripo.glb")
+	_check("model: oyundaki Alpay ölçüsü doğru (1.6 m, +Z, bütçe)", r["ok"], ModelValidator.format_report(r))
+	_check("model: stilize shader'a çevrildi", _count_unstylized(model) == 0, "")
+
+
 func _test_animator() -> void:
 	_level.call(&"load_room", 4)
 	await _frames(3)
@@ -207,7 +220,7 @@ func _test_animator() -> void:
 	_check("anim: yerde duran → idle", anim.current == &"idle", str(anim.current))
 	Input.action_press(&"move_right")
 	await _frames(20)
-	var body := _player.get_node(^"Visual/Body") as Node3D
+	var body := anim.get_procedural_target()
 	_check("anim: koşu → run + öne eğilme (yordamsal)", anim.current == &"run" and body.rotation.x > 0.05,
 			"%s eğim=%.2f" % [anim.current, body.rotation.x])
 	Input.action_release(&"move_right")
