@@ -58,9 +58,9 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 - **Yetenek:** Umay Tüyü (çift zıplama) — aslında oyunun ortasında gizli bir yoldan da alınabilir.
 - **Final:** Karakuş + Kalp.
 
-### Kök Dibi — greybox düzeni (M5, 13 oda)
+### Kök Dibi — greybox düzeni (M5 + M6 boss odası = 14 oda)
 ```
- y=2         [Gizli]                                              [Çiçek ][Eşik]
+ y=2         [Gizli]                                              [Çiçek ][Eşik][ İn ── ]
  y=1   [Tırm.][ Yankı ──── ][ Üst Kökler ─── ]  [Çürük ][Sunak][Kanca B.][Spor M.][Kuyusu]
  y=0   [Kuyu ][Ocak][ Yuva ][ Savrulma ]        [Geçit ]
         x=-1   0     1-2    3-4                  5-6     7     8-9       10-11   12     13
@@ -75,7 +75,8 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 | **Kanca Bahçesi** | 22 m sarmaşıksız uçurum, yalnızca kanca çiçekleri | İki yön de kanca ister |
 | **Spor Mahzeni** | Sürüngen + 3 Şişkin; tavandaki çiçekle üstlerinden geç ya da dövüş | |
 | **Çiçek Kuyusu** | Tırmanma + kanca, 22.5 m dikey | Tepe kapısı kanca ister |
-| **Kökyiyen Eşiği** | Boss öncesi Ocak "esik" + mühürlü kök kapısı (M6) | |
+| **Kökyiyen Eşiği** | Boss öncesi Ocak "esik" + kök kapısı | D: Kökyiyen'in İni |
+| **Kökyiyen'in İni** (M6) | Boss: arena (DEPTH) + kovalamaca kuyusu (SIDE); dövüşte kapı kilitli | Yenilince Kut #3, Kocabaş'ın mesajı |
 | **Üst Kökler** | **Derinlik sırrı:** koridor sonu yandan duvar; kamera derinliğe dönünce sahte duvar kaybolur, arkadaki geçit iner | Alt: Ocak Odası · Sır: Gizli Oda |
 | **Gizli Oda** | Kut parçası #2; haritada yalnızca bulununca görünür | |
 

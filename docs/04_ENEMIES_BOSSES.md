@@ -46,8 +46,32 @@ Her boss için doldurulacak:
 - **Faz 1 (3D):** Zeminden çıkıp dalış yapar; oyuncu sırtındaki parlayan çürük keselerine kamçıyla vurur. Saldırılar: yerden fırlama (zemin çatlak ipucu), kuyruk süpürmesi (zıpla).
 - **Faz 2 (3D):** Mağara duvarlarına girip çıkar; arenaya Spor Şişkinleri çağırır. Tavandaki sarmaşıklara tutunup ondan kaçmak gerekir.
 - **Faz 3 (Yan mod, kovalamaca):** Tavan çöker; Kökyiyen aşağıdan yükselirken oyuncu sarmaşıktan sarmaşığa yukarı kaçar, son anda ağzına kamçıyla bir kök kayası çekerek bitirir.
-- **Öğrettiği:** Sallanma + kamçı + iki kamera modunun birlikte kullanımı.
-- **Ödül:** Kamçı Kancası + Kocabaş'ın ilk mesajı.
+- **Öğrettiği:** Sallanma + kamçı + kanca + iki kamera modunun birlikte kullanımı.
+- **Ödül (karar 2026-11-25):** Kocabaş'ın ilk mesajı (hikaye anı) + **Kut parçası** + can tam dolar. (Kamçı Kancası M5'te Sunak'a taşındı.)
+
+#### B1 uygulaması (M6, greybox) — `scripts/bosses/`
+| Parça | Sınıf | Not |
+|---|---|---|
+| Boss + faz denetleyici | `Rooteater` | `enum Phase {DORMANT, INTRO, ONE, TWO, CHASE, FINALE, DEFEATED}` × `enum Action {BURROWED, TELEGRAPH, ERUPT, EXPOSED, SWEEP_TELL, SWEEP, BURROW}`; tüm süreler @export |
+| Çürük kesesi (zayıf nokta) | `BossWeakPoint` (Enemy) | Yalnızca açıktayken vurulur → kamçı, Öz, hit-stop, pogo aynen çalışır |
+| Hasar hacimleri | `BossHazard` | Gövde, fırlama sütunu, süpürme halkası; katman "hazard" |
+| Faz 3 ağız | `RisingMaw` | Öldürmez; lastik bant hız |
+| Final kayası | `RootRock` (GrappleFlower) | Kancayla tutulunca kopar, ağza düşer |
+
+| Sayı | Faz 1 | Faz 2 |
+|---|---|---|
+| Gömülü bekleme | 0.8 sn | 0.5 sn |
+| **Çatlak uyarısı** (oyuncunun altında) | 1.0 sn | 0.8 sn |
+| Fırlama (sütun, r 1.6 m) | 0.5 sn | 0.5 sn |
+| Açıkta (kese vurulabilir) | 2.8 sn | 3.0 sn |
+| Oyuncuya dönüş hızı (kese sırtta → etrafından dolaş) | 40°/sn | 50°/sn |
+| Süpürme uyarısı → süpürme (yerde 1 m yükseklik) | 0.7 → 0.35 sn, r 6 m | 0.7 → 0.35 sn, **tüm arena** (zıpla / tavan sarmaşığı) |
+| Ek | — | Her döngüde 2 Spor Şişkini (en çok 3, 1.8 m yükseklikte — derinlikte ileri kamçıyla vurulabilir) |
+| Kese canı | 8 | 8 |
+
+**Faz 3 kovalamaca:** "Tavan çöküyor!" → karartma → kuyunun dibi (SIDE). Ağız −6 m'den yükselir; kuyu zemini **ağız gelince** kırılır (≈ 3 sn tırmanma payı). Hız 2.2 m/s; oyuncu 14 m'den uzaksa 4.0, 4 m'den yakınsa 1.0. **Ağız öldürmez** (karar 2026-11-25): değerse 1 yaprak + 16 m/s yukarı fırlatma, ağız 1.5 sn durur ve 3 m geri çekilir (ölüm döngüsü yok). Yol: tırmanma A → kanca çiçeği → tırmanma B → çiçek → tırmanma C → tepe çıkıntısı → **kök kayasına kanca** → kaya ağza düşer → yenilgi.
+
+**Zorluk denemeleri (bot, test_m6):** mükemmel zamanlamalı bot 3/3–5/5 kazanır, ort. ≈ 60 sn, 0–1 yaprak kaybı (faz 1 ≈ 7 sn, faz 2 ≈ 20–50 sn, kovalamaca ≈ 16 sn). Bot uyarıları "bilerek" oynadığı için bu bir **alt sınır**; gerçek zorluk kullanıcı denemeleriyle ayarlanır (tüm sayılar `Rooteater`/`RisingMaw` @export). Ayarlama sırasında bulunanlar: Faz 2'de 2.4 sn/65°/sn'de keseye hiç ulaşılamıyordu; Şişkinler 3 m'de kamçı menzili dışındaydı; kovalamaca zemini 1.2 sn'de çöküp ağız+fırlatma ölüm döngüsü yaratıyordu.
 
 ### B2 — Kehribar Bekçisi
 Kehribara gömülü eski bir golem; özsu akışını boss sırasında değiştirerek zayıf noktasını eritmek gerekir. Öz Çekimi ile kehribar parçaları fırlatılır.

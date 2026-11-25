@@ -38,6 +38,11 @@ var last_ocak: StringName = &""
 var last_ocak_room: StringName = &""
 
 
+func _ready() -> void:
+	# Ana dil Türkçe (docs/00); dil seçimi Ayarlar menüsüyle (M9) gelir.
+	TranslationServer.set_locale("tr")
+
+
 func has_ability(id: StringName) -> bool:
 	return abilities.get(id, false)
 

@@ -40,7 +40,9 @@
 1. **Açılış sinematiği:** Gökten düşen bir ışık, kökler arasında bir bebek, Kocabaş'ın onu bulması. (Bebeğin yüzü gösterilmez; sadece tüy kolye parlar.)
 2. Yıllar sonra: Alpay, Kocabaş ile kök mağaralarında oynar (tutorial: koşma, zıplama, sallanma).
 3. Kara Öz, Kocabaş'ı yakalar. Kocabaş: *"Çürüklük yukarıdan geliyor… tüyünün geldiği yerden."*
-4. Alpay ilk boss'u (**Kökyiyen**) yener, Kök Dibi'nden çıkar. → **Dikey dilim burada biter.**
+4. Alpay ilk boss'u (**Kökyiyen**) yener; köklerin arasından Kocabaş'ın sesi gelir (M6 hikaye kartı):
+   *"Alpay… Sesimi duyuyor musun? Ben buradayım, köklerin içinde." — "Kara Öz beni yukarı sürüklüyor. Çürüklük yukarıdan geliyor… tüyünün geldiği yerden." — "Tırman, yavrum. Öz Damarları'na. Ben dayanırım."*
+   Alpay Kök Dibi'nden çıkar. → **Dikey dilim burada biter.**
 
 ### Perde 2 — Gövde ve Dallar (Arayış)
 5. Öz Damarları'nda Kam Ana Ayzıt, kolyenin gök tüyü olduğunu söyler.
@@ -63,7 +65,7 @@
 |---|---|---|---|---|
 | C01 | Gökten Düşüş | Açılış | 60–90 sn | Kamera rayı (Path3D) + AnimationPlayer |
 | C02 | Kocabaş Yakalanıyor | Oyun içi | 30 sn | Oyun içi sahne, oyuncu kontrolü kilitli |
-| C03 | Kökyiyen Uyanıyor | Boss intro | 10 sn | Derinlik kamerasına geçiş + isim kartı |
+| C03 | Kökyiyen Uyanıyor | Boss intro | 10 sn | Derinlik kamerasına geçiş + isim kartı (M6 greybox: 2.5 sn, kontrol kilitli, ortadan fırlar) |
 | C04 | Tüy Rüyası 1 | Rüya | 20 sn | Beyaz/altın post-process, yüzü görünmeyen anne |
 | C05 | Erlik'in Gösterdiği | Ters uçuş | 40 sn | Kökten taca kesintisiz kamera uçuşu (oyunun "wow" anı) |
 | C06 | Annenin İtirafı | Rüya | 45 sn | — |

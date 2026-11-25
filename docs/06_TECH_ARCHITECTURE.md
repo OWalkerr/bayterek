@@ -94,6 +94,12 @@ Enemy (CharacterBody3D) ── enemy.gd  katman "enemy" (3), maske "world"
 ```
 Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Tehlike alanları (`SporeCloud`) katman "hazard" (5).
 
+## Boss Mimarisi (M6)
+- `scripts/bosses/`: `Rooteater` (faz + eylem durum makinesi, kendi `BossPhaseController` mantığı tek dosyada), `BossWeakPoint` (Enemy alt sınıfı → oyuncunun kamçı sistemi değişmeden çalışır), `BossHazard`, `RisingMaw`, `RootRock`.
+- Boss odası script'i (`room_19_kokyiyen_ini.gd`) boss'u yalnızca `kokyiyen_ini/boss_defeated` bayrağı yoksa kurar; tetik alanı dövüşü başlatır ve kapıları kilitler; `defeated` → bayrak + Kut + tam can + kayıt + `EventBus.story_requested`.
+- UI: `BossCard` (EventBus.boss_intro), `StoryCard` (EventBus.story_requested; M8'de Dialogue Manager'a taşınır).
+- EventBus (M6): `boss_intro`, `boss_phase_changed`, `boss_phase_message`, `boss_defeated`, `story_requested`, `story_finished`.
+
 ## Oda (Room) Sistemi (M4 — uygulandı)
 - **Her oda ayrı `.tscn`** (`scenes/world/regions/<bölge>/rooms/<oda_id>.tscn`). Kök düğüm script'i odanın greybox script'i (`scripts/world/rooms/room_XX_*.gd`, `GreyboxRoom` → `Room`). Sahnede: `room_id`, `display_name`, `idea`, `region`, `map_cell`, `map_size`, `spawn_point`, (isteğe bağlı) `bounds` + kapı/Ocak/toplanabilir düğümleri. Geometri şimdilik kodda (`_build()`); M7'de modeller aynı .tscn'e eklenir (karar 2026-11-25).
 - `RoomRegistry` (`scripts/world/room_registry.gd`): oda kimliği → sahne yolu, `START_ROOM`, geliştirici oda listesi. **Yeni oda = .tscn + registry satırı.**
@@ -132,9 +138,11 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `test_m3.tscn` | Arka uç, mod geçişi (konum/FOV), geçiş yavaşlaması, girdi sürekliliği, SideRail (arka koridor + Z=0'a 0.4 sn), oda sınırları, look-ahead, ölü bölge, düşüşte dikey odak, **bot ile mağara odası** |
   | `test_m4.tscn` | Harita verisi (karşılıklı kapılar, çakışmayan hücreler, erişilebilirlik), yeni oyun, kapı geçişi (hız + kayıt), **tüm kapıların fiziksel varışı**, Ocak, ölümde son Ocak, kalıcı toplanabilir, kayıt turu, Devam, harita ekranı |
   | `test_m5.tscn` | Bölge verisi (13 oda, 2 Kut, yeteneksiz/yetenekli erişilebilirlik), kanca (yeteneksiz çalışmaz, hedef, ip), sunak, **botla**: Kanca Bahçesi, Ocak Odası tavanı, Çiçek Kuyusu (kancalı geçer / kancasız geçemez), derinlik sırrı → Gizli Oda; Öz + iyileşme |
+  | `test_m6.tscn` | Boss: giriş (kart, kilit), çatlak uyarısı ≥ 0.4 sn, zayıf nokta, fırlama/süpürme (zıplayınca kaçılır), Faz 2 (Şişkin, sınır, tüm arena), kovalamaca (zemin ağızla çöker, değince hasar + fırlatma, ölüm yok), final, ödüller, hikaye, boss geri gelmez; **bot ile tam dövüş denemeleri** (`TRIALS=5`, `HIT_LOG=1`) |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
+- **Tip tuzağı:** `Array[Node].filter(...)` türsüz `Array` döndürür → türlü değişkene atama SCRIPT ERROR; lambda içinde serbest bırakılmış nesneye dokunmak da hata. Elle döngüyle ayıkla.
 - **Serbest bırakılmış düğüm tuzağı:** Ölüp `queue_free` olan düşmanın metodunu çağırmak (ör. `is_dead()`) motoru çökertir (signal 11) → önce `is_instance_valid()`.
 - **Girdi simülasyonu tuzağı:** Godot 4.6'da `Input.action_press()` bir sonraki fizik karesinde "just pressed" olur; testte tuş en az 2–3 kare basılı tutulmalı.
 - **Bot:** `test_m1.gd` içindeki bot yönü basılı tutar, kenarda/tırmanma sarmaşığı önünde zıplar, sallanırken salınım yönünde pompalar ve açı > 40° & ω > 0 iken bırakır. `BOT_ANGLE=50` ile bırakma açısı, `BOT_ONLY=1` ile yalnızca bot, `BOT_DEBUG=1` ile kare kare iz alınır.

@@ -32,6 +32,10 @@
 - **Sallanma zinciri:** Hız > 9 m/s ise kamera 2 m geri çekilir.
 - **Oda sınırları:** Her oda bir AABB tanımlar (`GreyboxRoom.bounds`; boşsa statik kutulardan otomatik + 1 m pay). SIDE'da görüş dikdörtgeni (mesafe × tan(FOV/2) × en-boy) bu sınırın dışına taşmaz; oda görüşten darsa ortalanır. DEPTH'te sınır uygulanmaz.
 
+## Boss kamerası (M6)
+- Kökyiyen arenası tek bir DEPTH bölgesi (yaw 0, arena ön kenarı kameraya açık; görünmez çarpışma duvarı). Faz 3'te `SceneRouter.move_player_with_fade()` → kuyu (bölge dışı) → `reset_to_side()`.
+- Intro (C03 greybox): oyuncu 2.5 sn kilitli, boss ortadan yükselir, alt-orta isim kartı. Faz geçişlerinde kısa yavaşlama (`TimeScale`): Faz 1→2 0.6x/0.5 sn, yenilgi 0.4x/0.8 sn.
+
 ## Sinematik Sistemi
 - **Araçlar:**
   - `AnimationPlayer` — kamera, karakter animasyonları, ışık, ses, olay çağrıları tek zaman çizelgesinde.

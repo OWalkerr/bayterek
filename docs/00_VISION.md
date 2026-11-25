@@ -68,3 +68,7 @@
 | 2026-11-25 | Öz barı + iyileşme (L 1 sn = 1 yaprak, 33 Öz) M5'te; para Yuva Dalları'nda | Kullanıcı kararı; savaşın risk/ödül döngüsü |
 | 2026-11-25 | Gizli oda = derinlik sırrı (sahte duvar, kamera dönünce kaybolur) | Kullanıcı kararı; Sütun 4 |
 | 2026-11-25 | Kapı gereksinimi veride (`RoomDoor.requires`) + botla fiziksel doğrulama | Soft-lock ve kapı sızıntısı otomatik yakalansın |
+| 2026-11-25 | Kökyiyen ödülü: Kocabaş'ın mesajı (hikaye anı) + Kut parçası + tam can | Kullanıcı kararı |
+| 2026-11-25 | Faz 3 kovalamaca öldürmez: hasar + fırlatma + ağız geri çekilir; zemin ağız gelince kırılır | Kullanıcı Claude'a bıraktı; "ölüm cezası düşük" kuralı, ölüm döngüsünü önler |
+| 2026-11-25 | Boss zorluğu: bot denemeleriyle başlangıç ayarı, sonra kullanıcı denemeleri | Kullanıcı kararı; bot alt sınır verir, tüm sayılar @export |
+| 2026-11-25 | Oyun dili başlangıçta TranslationServer ile "tr"; çeviriler project.godot'a kayıtlı | tr() anahtarları ham dönüyordu |

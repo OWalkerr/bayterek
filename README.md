@@ -9,10 +9,10 @@ Kökler arasında büyümüş yetim **Alpay**, sarmaşık kamçısıyla Hayat A�
 - **Görünüm:** 3D dünya, yandan kamera; mağaralarda 3D derinlik kamerası
 - **Hedef:** PC / Steam · test için Web build
 
-## Şu an ne var? (M5 — Kök Dibi greybox)
+## Şu an ne var? (M6 — Kökyiyen boss'u)
 **Oyna:** https://owalkerr.github.io/bayterek/ (tarayıcı, klavye)
 
-Menüden **Yeni Oyun** → Kök Dibi: 13 oda. Doğuya ilerle, Sunak Odası'nda **Kamçı Kancası**'nı al (K / sağ tık), kanca çiçekleriyle Kanca Bahçesi ve Çiçek Kuyusu'nu aşıp Kökyiyen Eşiği'ne ulaş; sonra Ocak Odası'na dönüp tavandaki çiçekle Üst Kökler'e çık ve duvarın sırrını bul. Ocak'ta (W) dinlen/kaydet; **L** basılı = Öz'le iyileş; **Tab** harita; 2 Kut parçası.
+Menüden **Yeni Oyun** → Kök Dibi: 13 oda. Doğuya ilerle, Sunak Odası'nda **Kamçı Kancası**'nı al (K / sağ tık), kanca çiçekleriyle Kanca Bahçesi ve Çiçek Kuyusu'nu aşıp Kökyiyen Eşiği'ne ulaş ve **Kökyiyen**'i yen (3D arena + kovalamaca; ödül: Kut parçası + Kocabaş'ın mesajı); sonra Ocak Odası'na dönüp tavandaki çiçekle Üst Kökler'e çık ve duvarın sırrını bul. Ocak'ta (W) dinlen/kaydet; **L** basılı = Öz'le iyileş; **Tab** harita; 2 Kut parçası.
 
 Geliştirici test odaları (0–5 tuşu, kayıt almaz):
 - **0 Kök Ağzı** — M0 prototipi: sallanma, mağarada 3D derinlik kamerası, yukarı zincir
@@ -43,4 +43,5 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn
+godot --headless --fixed-fps 60 --path . res://tests/test_m6.tscn
 ```

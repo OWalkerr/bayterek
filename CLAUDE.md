@@ -36,6 +36,7 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn            # M
 godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn            # M3 kamera + derinlik + bot mağara odası
 godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn            # M4 odalar, kapılar, Ocak, kayıt, harita
 godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn            # M5 bölge, kanca, kapı matrisi, sır, Öz/iyileşme
+godot --headless --fixed-fps 60 --path . res://tests/test_m6.tscn            # M6 Kökyiyen + bot dövüş denemeleri (TRIALS=5 HIT_LOG=1)
 python3 tools/gen_rooms.py                                                   # oda .tscn'lerini tablodan üret
 BAYTEREK_CAMERA_BACKEND=rig godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn   # yedek kamera arka ucu
 

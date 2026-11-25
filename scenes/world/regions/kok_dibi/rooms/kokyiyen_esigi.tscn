@@ -22,6 +22,14 @@ target_room = &"cicek_kuyusu"
 target_door = &"east_top"
 arrive_offset = Vector3(1.5, 0.1, 0.0)
 
+[node name="DoorEast" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"east"
+target_room = &"kokyiyen_ini"
+target_door = &"west"
+arrive_offset = Vector3(-2.0, 0.1, 0.0)
+
 [node name="Ocak" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0, 0.0, 0.0)
 script = ExtResource("3_ocak")

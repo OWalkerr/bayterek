@@ -29,6 +29,7 @@
  ◆ 128         ← Öz damlası (para) — sadece değişince 3 sn görünür
 ```
 - **M2 durumu:** Yapraklar `GameHud` ile çiziliyor (dolu `#5E8C4A`, kuru `#7A5A3A`, kaybedilen yaprak 0.3 sn büyür). Öz barı ve para M5+.
+- **M6:** Boss isim kartı (alt-orta: "KÖKYİYEN" 52 px gök beyazı + "Köklerin Açlığı" göz sarısı; 0.5 sn belir, 2.5 sn kal, 0.5 sn sön). Hikaye kartı (alt-orta, 900 px; konuşan rengi çerçeve; 40 harf/sn; Space/J: satırı tamamla → sonraki). Faz mesajları ekran ortasında kısa yazı.
 - **M5:** Yaprakların altında **Öz barı** (200×12 px, altın dolgu, her 33'te bir iyileşme eşiği çizgisi). Yetenek kazanınca ekran ortasında "YENİ YETENEK" kartı (ad + tek cümle + tuş ipucu, 3.5 sn, oyun durmaz). Kanca hedefi: çiçek altın parlar.
 - **M4:** Sağ altta kayıt anında 1.5 sn "Kaydedildi"; Ocak yanında dünyada "W · Dinlen" (Label3D).
 - **Font notu:** Web'deki varsayılan fontta ◆ ● ★ gibi simgeler yok (kutu görünür) → simgeler şekil olarak çizilir ya da düz metin kullanılır; asıl fontlar M9'da (Nunito/Inter, Türkçe karakterler).

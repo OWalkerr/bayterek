@@ -17,6 +17,7 @@ const ROOMS: Dictionary = {
 	&"spor_mahzeni": "res://scenes/world/regions/kok_dibi/rooms/spor_mahzeni.tscn",
 	&"cicek_kuyusu": "res://scenes/world/regions/kok_dibi/rooms/cicek_kuyusu.tscn",
 	&"kokyiyen_esigi": "res://scenes/world/regions/kok_dibi/rooms/kokyiyen_esigi.tscn",
+	&"kokyiyen_ini": "res://scenes/world/regions/kok_dibi/rooms/kokyiyen_ini.tscn",
 	&"ust_kokler": "res://scenes/world/regions/kok_dibi/rooms/ust_kokler.tscn",
 	&"gizli_oda": "res://scenes/world/regions/kok_dibi/rooms/gizli_oda.tscn",
 	&"kok_agzi": "res://scenes/world/regions/test/rooms/kok_agzi.tscn",

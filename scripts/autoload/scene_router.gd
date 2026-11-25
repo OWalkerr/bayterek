@@ -89,6 +89,16 @@ func rest_at_ocak(room_id: StringName, ocak_id: StringName, rest_time: float) ->
 	busy = false
 
 
+## Aynı oda içinde karartmalı yer değiştirme (boss faz geçişi vb.). Kamera SIDE'a oturur.
+func move_player_with_fade(position: Vector3, duration: float = -1.0) -> void:
+	if host == null:
+		return
+	await _fade(1.0, duration)
+	host.call(&"place_player", position, Vector3.ZERO)
+	CameraDirector.reset_to_side()
+	await _fade(0.0, duration)
+
+
 func _enter(packed: PackedScene, door_id: StringName, position: Vector3, carry_velocity: Vector3) -> Room:
 	if packed == null:
 		return null
