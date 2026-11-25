@@ -10,8 +10,10 @@ const ROOM_SCRIPTS: Array[Script] = [
 	preload("res://scripts/world/rooms/room_02_tirmanma.gd"),
 	preload("res://scripts/world/rooms/room_03_curuk.gd"),
 	preload("res://scripts/world/rooms/room_04_yuva.gd"),
+	preload("res://scripts/world/rooms/room_05_yanki.gd"),
 ]
-const ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit", "Çürük Yuvası"]
+const ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit",
+		"Çürük Yuvası", "Yankı Mağarası"]
 ## Başlangıç odası (M0 testleri Kök Ağzı koordinatlarını kullanır).
 @export var start_room: int = 0
 ## Can bitince oda yeniden başlamadan önce bekleme (karar 2026-11-25: oda başı + tam can).
@@ -69,6 +71,7 @@ func load_room(index: int) -> void:
 	_death_timer = -1.0
 	GameState.reset_health()
 	player.place_at(room.spawn_point)
+	CameraDirector.set_room_bounds(room.bounds)
 	CameraDirector.reset_to_side()
 	hud.show_room_menu(false)
 	hud.on_room_loaded(index, room)

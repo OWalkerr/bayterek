@@ -119,6 +119,8 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 | 8 | **Gök Kamçısı** | yıldırımlı kamçı, metal/kehribar kırar | Gök Katları |
 
 ## 5. Derinlik Modu (3D kamera)
+> M3 uygulaması: docs/05 (girdi sürekliliği, SideRail, oda sınırları). Raya dönüş: üstel `rail_pull` 10 (~0.4 sn), hız sınırı `rail_max_speed` 12 m/s.
+
 Mağaraya girince veya özel tetikleyicide kamera karakterin arkasına döner:
 - Hareket **X-Z düzleminde serbest**, kameraya göre (ileri = kameradan uzağa).
 - Zıplama, kamçı ve sallanma aynı çalışır; sarkaç hesabı 3D'de anchor'a doğru düzlemde yapılır.

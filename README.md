@@ -9,15 +9,18 @@ Kökler arasında büyümüş yetim **Alpay**, sarmaşık kamçısıyla Hayat A�
 - **Görünüm:** 3D dünya, yandan kamera; mağaralarda 3D derinlik kamerası
 - **Hedef:** PC / Steam · test için Web build
 
-## Şu an ne var? (M2 — savaş temeli)
+## Şu an ne var? (M3 — kamera & derinlik)
 **Oyna:** https://owalkerr.github.io/bayterek/ (tarayıcı, klavye)
 
-`scenes/main/main.tscn` çalıştırıldığında 5 greybox oda (0–4 tuşu):
+`scenes/main/main.tscn` çalıştırıldığında 6 greybox oda (0–5 tuşu):
 - **0 Kök Ağzı** — M0 prototipi: sallanma, mağarada 3D derinlik kamerası, yukarı zincir
 - **1 Savrulma Zinciri** — yere basmadan yükselen sarmaşık zinciri, mükemmel bırakma
 - **2 Tırmanma Kuyusu** — tırmanma sarmaşıkları arası yana zıplama
 - **3 Çürük Geçit** — 1.5 sn'de kopan çürük sarmaşıklar, durmadan akış
 - **4 Çürük Yuvası** — Çürük Sürüngen + Spor Şişkini; kombo, Savrulma Saldırısı, pogo kapısı
+- **5 Yankı Mağarası** — yandan mağaraya gir, derinlikte uçurumu sarmaşıkla aş, arka katmandaki koridordan çık
+
+Kamera: Phantom Camera ile SIDE↔DEPTH geçişi (konum + FOV tween, 0.85x yavaşlama), girdi sürekliliği, ölü bölge, look-ahead, alt üçte bir odak / düşerken alt yarı, oda sınırları, SideRail.
 
 Mekanikler: koşma, değişken zıplama, coyote time, jump buffer, kinematik sarkaç sallanma (pompalama, ip kısaltma, momentumlu bırakma, mükemmel bırakma ışıltısı), tırmanma, çürük sarmaşık, havada momentum koruma, güvenli noktaya dönüş.
 
@@ -35,4 +38,5 @@ godot --headless --fixed-fps 60 --path . res://tests/validate_scripts.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_movement.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn
+godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn
 ```

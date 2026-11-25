@@ -44,6 +44,8 @@ const LIVE_FIELDS: Array = [
 ## Havada koşu hızının üstündeki momentumun azalma hızı (m/s²), girdi aynı yöndeyken.
 @export var air_overspeed_drag: float = 3.0
 @export var rail_pull: float = 10.0
+## Raya çekilme hız sınırı (m/s): büyük Z farkında ışınlanma/duvar delme olmasın.
+@export var rail_max_speed: float = 12.0
 
 @export_group("Zıplama")
 @export var jump_height: float = 2.2

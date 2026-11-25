@@ -16,7 +16,7 @@ func physics_update(delta: float) -> void:
 	_timer -= delta
 	p.apply_gravity(delta)
 	if CameraDirector.is_side_mode():
-		p.velocity.z = (p.rail_z - p.global_position.z) * tuning().rail_pull
+		p.velocity.z = p.rail_velocity_z()
 	p.move_and_slide()
 	if _timer <= 0.0:
 		p.change_state(Player.State.AIR)

@@ -43,12 +43,25 @@ res://
 | `EventBus` | Global sinyaller (oyuncu öldü, yetenek kazanıldı, oda değişti, kamera modu…) |
 | `GameState` | Yetenekler, bayraklar (flags), toplanabilirler, kayıt/yükleme (JSON, `user://save_X.json`) |
 | `SceneRouter` | Oda yükleme/boşaltma, kapı geçişleri, ResourceLoader ile arka planda (threaded) yükleme |
-| `CameraDirector` | Aktif kamera modu, geçişler; CameraRig'i yönetir |
+| `TimeScale` | Zaman ölçeği aracısı: hit-stop + kamera geçiş yavaşlaması (en küçük ölçek kazanır) — M3 |
+| `PhantomCameraManager` | Phantom Camera eklentisinin autoload'u (eklenti kendi ister) — M3 |
+| `CameraDirector` | Aktif kamera modu, geçişler, girdi sürekliliği, oda sınırları; CameraRig'i yönetir |
 | `CutsceneDirector` | Sinematik oynatma, giriş kilitleme, letterbox |
 | `AudioDirector` | Bölge müziği katmanları, crossfade, SFX havuzu |
 | `Settings` | Grafik, ses, kontrol ayarları (`user://settings.cfg`) |
 
-> Prototipte `EventBus`, `GameState`, `CameraDirector` hazır; diğerleri M2–M6 arasında eklenir.
+> M3 itibarıyla `InputSetup`, `EventBus`, `GameState`, `TimeScale`, `PhantomCameraManager`, `CameraDirector` hazır; diğerleri M4–M9 arasında eklenir. Sıra önemli: `PhantomCameraManager`, `CameraDirector`'dan önce yüklenir.
+
+## Kamera Mimarisi (M3)
+```
+CameraRig (Node3D)  ── camera_rig.gd: "beyin" (ölü bölge, look-ahead, dikey odak, geri çekilme, oda sınırı)
+├── Camera3D
+│   └── PhantomCameraHost          # PCam arka ucu açıksa
+├── PCamSide  (PhantomCamera3D)    # follow NONE; dönüşümü her karede CameraRig yazar
+├── PCamDepth (PhantomCamera3D)
+└── PhantomBackend (Node)          # phantom_camera_backend.gd: öncelik + tween süresi
+```
+Yedek arka uç: `use_phantom_camera = false` (veya `BAYTEREK_CAMERA_BACKEND=rig`) → aynı hedefler arasında yerleşik blend.
 
 ## Oyuncu Mimarisi
 ```
@@ -101,25 +114,27 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `validate_scripts.tscn` | `scripts/` altındaki tüm .gd dosyaları derleniyor mu |
   | `test_movement.tscn` | M0 duman testi: koşma, zıplama, sallanma, mağara kamerası, güvenli nokta |
   | `test_m1.tscn` | Coyote, jump buffer, tırmanma, çürük sarmaşık, mükemmel bırakma + **bot ile 3 odanın geçilmesi** |
+  | `test_m3.tscn` | Arka uç, mod geçişi (konum/FOV), geçiş yavaşlaması, girdi sürekliliği, SideRail (arka koridor + Z=0'a 0.4 sn), oda sınırları, look-ahead, ölü bölge, düşüşte dikey odak, **bot ile mağara odası** |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
 - **Serbest bırakılmış düğüm tuzağı:** Ölüp `queue_free` olan düşmanın metodunu çağırmak (ör. `is_dead()`) motoru çökertir (signal 11) → önce `is_instance_valid()`.
 - **Girdi simülasyonu tuzağı:** Godot 4.6'da `Input.action_press()` bir sonraki fizik karesinde "just pressed" olur; testte tuş en az 2–3 kare basılı tutulmalı.
 - **Bot:** `test_m1.gd` içindeki bot yönü basılı tutar, kenarda/tırmanma sarmaşığı önünde zıplar, sallanırken salınım yönünde pompalar ve açı > 40° & ω > 0 iken bırakır. `BOT_ANGLE=50` ile bırakma açısı, `BOT_ONLY=1` ile yalnızca bot, `BOT_DEBUG=1` ile kare kare iz alınır.
+- İki kamera arka ucu: `BAYTEREK_CAMERA_BACKEND=rig` ile tüm testler yedek blend'le de koşulur (milestone sonunda ikisi de yeşil olmalı).
 - Her milestone sonunda web export alınır: `tools/deploy_web.sh "mesaj"` → `build/web/` → `gh-pages` dalı (main'e build girmez). Oynanabilir link: https://owalkerr.github.io/bayterek/
 
 ## Geliştirme Kısayolları (M1–M3, M4'te kalkar)
 | Tuş | İşlev |
 |---|---|
-| 0–4 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası) |
+| 0–5 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası, Yankı Mağarası) |
 | R | Odayı baştan başlat |
 | F1 | Debug bilgisi (durum, konum, coyote/buffer, θ/ω/L, mükemmel pencere) |
 | F2 | Canlı tuning paneli (kaydırıcılar, "Kopyala" → .tres metni) |
 
 ## Greybox Oda Altyapısı (M1)
 - `scripts/world/greybox_level.gd` (main.tscn kökü): ortam, oyuncu, CameraRig, DebugHud ve oda yükleyici (`load_room(i)`).
-- `scripts/world/greybox_room.gd` (`GreyboxRoom`): kodla oda kurma yardımcıları (`box`, `platform`, `vine`, `rotten_vine`, `climb_vine`, `glow`, `place_goal`, `camera_zone`).
+- `scripts/world/greybox_room.gd` (`GreyboxRoom`): kodla oda kurma yardımcıları (`box`, `platform`, `vine`, `rotten_vine`, `climb_vine`, `crawler`, `bloater`, `glow`, `place_goal`, `camera_zone`, `side_rail`) + kamera sınırı (`bounds`, otomatik `compute_bounds()`).
 - `scripts/world/rooms/room_XX_*.gd`: test odaları. Her oda `room_id`, `display_name`, `idea` ("bir oda = bir fikir"), `spawn_point` ve bir `RoomGoal` tanımlar.
 - `scripts/ui/`: `DebugHud`, `TuningPanel`, `UiStyle` (docs/08 paleti). `scripts/fx/`: `ReleaseSpark`.
 

@@ -93,7 +93,7 @@ func on_goal(best: float) -> void:
 	var text := "Hedef! %.2f sn" % room_time
 	if best > 0.0:
 		text += "   (en iyi %.2f)" % best
-	flash_message(text + "\nR: tekrar · 0–4: oda seç", 5.0)
+	flash_message(text + "\nR: tekrar · 0–5: oda seç", 5.0)
 
 
 func flash_message(text: String, duration: float = MESSAGE_TIME) -> void:
@@ -112,7 +112,7 @@ func _build_room_menu() -> void:
 	box.add_theme_constant_override(&"separation", 8)
 	_room_menu.add_child(box)
 	box.add_child(UiStyle.label("BAYTEREK — Greybox Test Odaları", 30, UiStyle.SAP_GOLD))
-	box.add_child(UiStyle.label("Tuşla (0–4) veya tıklayarak seç. Hareket edince menü kapanır.",
+	box.add_child(UiStyle.label("Tuşla (0–5) veya tıklayarak seç. Hareket edince menü kapanır.",
 			UiStyle.FONT_SIZE_SMALL))
 	for i in _room_names.size():
 		var b := UiStyle.button("%d · %s" % [i, _room_names[i]])

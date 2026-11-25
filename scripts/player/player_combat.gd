@@ -25,7 +25,6 @@ var _buffer: float = 0.0
 var _hit_ids: Dictionary = {}
 var _whip_mesh: MeshInstance3D
 var _whip_material: StandardMaterial3D
-var _hit_stop_active: bool = false
 
 
 func _ready() -> void:
@@ -175,20 +174,7 @@ func _facing_basis() -> Basis:
 
 func _hit_stop() -> void:
 	var t := player.tuning
-	if t.hit_stop_time <= 0.0 or _hit_stop_active:
-		return
-	_hit_stop_active = true
-	Engine.time_scale = t.hit_stop_scale
-	var timer := get_tree().create_timer(t.hit_stop_time, true, false, true)
-	timer.timeout.connect(func() -> void:
-		Engine.time_scale = 1.0
-		_hit_stop_active = false)
-
-
-func _exit_tree() -> void:
-	if _hit_stop_active:
-		Engine.time_scale = 1.0
-		_hit_stop_active = false
+	TimeScale.request(&"hit_stop", t.hit_stop_scale, t.hit_stop_time)
 
 
 # ---------------------------------------------------------------- Görsel (greybox)

@@ -45,7 +45,7 @@ func physics_update(delta: float) -> void:
 
 	# Yan modda raya çekilme (derinlikten çıkışta yumuşak dönüş de buradan gelir)
 	if CameraDirector.is_side_mode():
-		p.velocity.z = (p.rail_z - p.global_position.z) * t.rail_pull
+		p.velocity.z = p.rail_velocity_z()
 
 	# Zıplama (coyote time + jump buffer)
 	if p.jump_buffer_timer > 0.0 and p.coyote_timer > 0.0:

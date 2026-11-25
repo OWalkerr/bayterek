@@ -20,10 +20,44 @@ var display_name: String = "Oda"
 var idea: String = ""
 var spawn_point: Vector3 = Vector3.ZERO
 var goal: RoomGoal = null
+## Kamera oda sınırları (SIDE). Boşsa oda geometrisinden (StaticBody kutuları) otomatik hesaplanır.
+var bounds: AABB = AABB()
+## Otomatik sınırlara eklenen pay (m).
+var bounds_margin: float = 1.0
 
 
 func _ready() -> void:
 	_build()
+	if bounds.size == Vector3.ZERO:
+		bounds = compute_bounds()
+
+
+## Odadaki tüm statik kutuların birleşik AABB'si (+ pay).
+func compute_bounds() -> AABB:
+	var result := AABB()
+	var first := true
+	for child: Node in get_children():
+		var body := child as StaticBody3D
+		if body == null:
+			continue
+		for c: Node in body.get_children():
+			var col := c as CollisionShape3D
+			if col == null or not col.shape is BoxShape3D:
+				continue
+			var size := (col.shape as BoxShape3D).size
+			var box := AABB(body.position - size * 0.5, size)
+			result = box if first else result.merge(box)
+			first = false
+	return result.grow(bounds_margin)
+
+
+func side_rail(z: float, x_min: float, x_max: float) -> SideRail:
+	var rail := SideRail.new()
+	rail.position = Vector3((x_min + x_max) * 0.5, 0.0, z)
+	rail.x_min = x_min
+	rail.x_max = x_max
+	add_child(rail)
+	return rail
 
 
 ## Alt sınıflar geometriyi burada kurar.

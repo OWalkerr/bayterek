@@ -16,7 +16,8 @@ Claude bu projede **kod profesörü + oyun tasarımcısı + arayüz tasarımcıs
 - Hareket/kamera sayıları kodda sabit değil: `PlayerTuning` (`data/tuning/player_tuning.tres`) veya `@export`.
 - **Çekirdek oyun saf GDScript** — web test build'i bozacak GDExtension/C# çekirdeğe girmez.
 - Sallanma fizik motoruyla değil **kinematik sarkaçla** yapılır (docs/03 §2.2).
-- Kamera ile doğrudan değil `CameraDirector` API'si ile konuşulur.
+- Kamera ile doğrudan değil `CameraDirector` API'si ile konuşulur. Kamera blend'i Phantom Camera (addons/), beyin `CameraRig`.
+- `Engine.time_scale` doğrudan yazılmaz; `TimeScale.request(id, ölçek, süre)` kullanılır.
 - Global olaylar `EventBus` üzerinden; kalıcı durum `GameState` içinde.
 - Kullanıcının bilgisayarına bir şey kurulamaz; testler bulutta headless, oynanış testleri web build ile.
 
@@ -31,6 +32,8 @@ godot --headless --fixed-fps 60 --path . res://tests/validate_scripts.tscn   # t
 godot --headless --fixed-fps 60 --path . res://tests/test_movement.tscn      # M0 duman testi
 godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn            # M1 hareket + bot oda geçişi
 godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn            # M2 savaş + can + bot savaş odası
+godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn            # M3 kamera + derinlik + bot mağara odası
+BAYTEREK_CAMERA_BACKEND=rig godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn   # yedek kamera arka ucu
 
 # Web export şablonları (oturum başına bir kez, ~80 MB; yalnızca web dosyaları çıkarılır)
 mkdir -p /tmp/tpl && cd /tmp/tpl && curl -sSL -o t.tpz https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_export_templates.tpz \

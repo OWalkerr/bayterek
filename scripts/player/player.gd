@@ -16,6 +16,8 @@ const BODY_CENTER: float = 0.8
 
 var state: State = State.AIR
 var rail_z: float = 0.0
+## Odada SideRail yoksa dönülecek Z (oda başlangıç rayı).
+var default_rail_z: float = 0.0
 ## Son bırakmanın mükemmel olup olmadığı (debug HUD + testler için).
 var last_release_perfect: bool = false
 ## Bakış yönü (dünya, yatay birim vektör) — kamçı ileri vuruşu bunu kullanır.
@@ -67,6 +69,8 @@ func _ready() -> void:
 	add_to_group(&"player")
 	_last_safe_position = global_position
 	rail_z = global_position.z
+	default_rail_z = rail_z
+	EventBus.camera_mode_changed.connect(_on_camera_mode_changed)
 
 
 func _physics_process(delta: float) -> void:
@@ -191,10 +195,16 @@ func place_at(at: Vector3) -> void:
 	respawn(at)
 	_last_safe_position = at
 	rail_z = at.z
+	default_rail_z = at.z
 	swing_state.last_anchor = null
 	climb_state.last_vine = null
 	invuln_timer = 0.0
 	_visual.visible = true
+
+
+## Yan modda raya (rail_z) çekilme hızı: üstel yaklaşım (~0.4 sn), hız sınırlı.
+func rail_velocity_z() -> float:
+	return clampf((rail_z - global_position.z) * tuning.rail_pull, -tuning.rail_max_speed, tuning.rail_max_speed)
 
 
 func apply_gravity(delta: float) -> void:
@@ -263,15 +273,24 @@ func get_move_input() -> Vector2:
 	return Input.get_vector(&"move_left", &"move_right", &"move_down", &"move_up")
 
 
-## Girdiyi dünya uzayında yatay bir vektöre çevirir.
+## Girdiyi dünya uzayında yatay bir vektöre çevirir. Eksenler CameraDirector'dan gelir
+## (girdi sürekliliği: geçişte basılı tutulan tuş eski anlamını korur).
 func input_to_world(input: Vector2) -> Vector3:
-	if CameraDirector.is_side_mode():
-		return Vector3(input.x, 0.0, 0.0)
 	var cam_basis: Basis = CameraDirector.get_input_basis()
 	var right := Vector3(cam_basis.x.x, 0.0, cam_basis.x.z).normalized()
 	var forward := Vector3(-cam_basis.z.x, 0.0, -cam_basis.z.z).normalized()
-	var dir := right * input.x + forward * input.y
-	return dir.limit_length(1.0)
+	var dir := (right * input.x + forward * input.y).limit_length(1.0)
+	if CameraDirector.is_side_mode():
+		# Yan modda yalnızca X. Derinlikten çıkarken tutulan yön, dünya yönünün X bileşeniyle sürer.
+		if CameraDirector.is_input_continuity_active() and absf(dir.x) > 0.3:
+			return Vector3(dir.x, 0.0, 0.0).limit_length(1.0)
+		return Vector3(input.x, 0.0, 0.0)
+	return dir
+
+
+func _on_camera_mode_changed(new_mode: int) -> void:
+	if new_mode == CameraRig.Mode.SIDE and is_inside_tree():
+		rail_z = SideRail.find_rail_z(get_tree(), global_position, default_rail_z)
 
 
 # ---------------------------------------------------------------- Tutunma seçimi

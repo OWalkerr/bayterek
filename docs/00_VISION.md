@@ -53,3 +53,7 @@
 | 2026-11-25 | Savrulma Saldırısı M2'ye alındı (≥ 8 m/s → 2 hasar) | Kullanıcı kararı; Sütun 3: kamçı + sallanma aynı fiil |
 | 2026-11-25 | Yol açan düşmanlar yeniden doğar (`respawn_time`) | Pogo basamağı Şişkin'i yanlış öldürmek odayı kilitlemesin (soft-lock yok) |
 | 2026-11-25 | Oyuncu durum makinesi `scripts/player/states/` altında RefCounted durum nesneleri | player.gd 400 satırı geçti (docs/06 kuralı); düğüm yerine nesne → sahne ağacı sade |
+| 2026-11-25 | **Phantom Camera kalıyor** (blend arka ucu), beyin kendi CameraRig'imiz | Web + headless sorunsuz, iki arka uçta tüm testler yeşil; PCam'da 3D oda sınırı / look-ahead yok → bu kısım bizde. Yedek arka uç bayrakla açılır |
+| 2026-11-25 | `TimeScale` autoload'u (hit-stop + geçiş yavaşlaması aracısı) | İki sistem aynı anda Engine.time_scale yazıp birbirini bozuyordu |
+| 2026-11-25 | Raya çekilme hız sınırı 12 m/s | Büyük Z farkında oyuncu bir karede 4 m ışınlanıp duvar delebiliyordu |
+| 2026-11-25 | Mağaradan farklı derinlik katmanına çıkış (SideRail) | Sütun 4: "bu dünyanın arkası da varmış" — Oda 5 arka koridor |

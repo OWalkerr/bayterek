@@ -4,7 +4,7 @@
 | Eklenti | Repo | Ne için | Ne zaman | Web uyumu |
 |---|---|---|---|---|
 | **Dialogue Manager 3** | https://github.com/nathanhoad/godot_dialogue_manager | Diyalog + sinematik betikleri. v3.x Godot 4.4+; v4 Godot 4.6+ için (yayın durumu kontrol edilmeli) | M8 | ✅ GDScript |
-| **Phantom Camera** | https://github.com/ramokz/phantom-camera | Cinemachine benzeri 2D/3D kamera, öncelik + tween geçiş | M3 (değerlendirme) | ✅ GDScript |
+| **Phantom Camera** | https://github.com/ramokz/phantom-camera | Cinemachine benzeri 2D/3D kamera, öncelik + tween geçiş | ✅ **Kullanılıyor (M3)** — v0.9.4.2, `addons/phantom_camera` (C# + örnekler çıkarıldı). Yalnız blend; beyin CameraRig | ✅ GDScript, web'de test edildi |
 | **MixaBridge** | https://godotengine.org/asset-library/asset/5096 | Mixamo animasyon retarget otomasyonu (editör eklentisi) | M7 | Editör-only |
 | **Metroidvania System (MetSys)** | https://github.com/KoBeWi/Metroidvania-System | Harita editörü, oda geçişi, kayıt | M4 (değerlendirme; 2D odaklı) | ✅ GDScript |
 | **LimboAI** | https://github.com/limbonaut/limboai | Davranış ağacı + HSM (boss AI). Godot 4.6+ sürümü var | Opsiyonel | ⚠️ GDExtension — web build'i doğrulanmalı |

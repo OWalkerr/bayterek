@@ -25,6 +25,7 @@ func _enter_tree() -> void:
 	_add_action("room_2", [KEY_2], [], [])
 	_add_action("room_3", [KEY_3], [], [])
 	_add_action("room_4", [KEY_4], [], [])
+	_add_action("room_5", [KEY_5], [], [])
 
 
 func _add_action(action: String, keys: Array, buttons: Array, axes: Array) -> void:
