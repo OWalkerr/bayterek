@@ -1,12 +1,42 @@
 class_name PlayerTuning
 extends Resource
 ## Alpay'ın tüm hareket sayıları. Değerler docs/03_MECHANICS.md ile senkron tutulur.
+## Debug panelinden (F2) canlı değiştirilebilir; panel `LIVE_FIELDS` listesini kullanır.
+
+## Canlı tuning panelinde gösterilecek alanlar: [ad, min, maks, adım]
+const LIVE_FIELDS: Array = [
+	["run_speed", 3.0, 12.0, 0.1],
+	["ground_accel", 10.0, 150.0, 1.0],
+	["ground_decel", 10.0, 150.0, 1.0],
+	["air_control", 0.0, 1.0, 0.01],
+	["air_overspeed_drag", 0.0, 20.0, 0.25],
+	["jump_height", 1.0, 4.0, 0.05],
+	["gravity_up", 8.0, 60.0, 0.5],
+	["gravity_down", 8.0, 80.0, 0.5],
+	["jump_cut", 0.0, 1.0, 0.01],
+	["coyote_time", 0.0, 0.3, 0.01],
+	["jump_buffer", 0.0, 0.3, 0.01],
+	["max_fall_speed", 8.0, 40.0, 0.5],
+	["grab_radius", 0.5, 3.0, 0.05],
+	["swing_gravity", 8.0, 50.0, 0.5],
+	["swing_pump", 0.0, 25.0, 0.25],
+	["swing_damping", 0.0, 1.0, 0.01],
+	["swing_max_angle_deg", 45.0, 140.0, 1.0],
+	["release_boost", 0.5, 2.0, 0.01],
+	["release_jump_bonus", 0.0, 12.0, 0.1],
+	["perfect_release_bonus", 1.0, 1.6, 0.01],
+	["climb_speed", 1.0, 8.0, 0.1],
+	["climb_jump_speed_x", 0.0, 12.0, 0.1],
+	["climb_jump_height", 0.5, 4.0, 0.05],
+]
 
 @export_group("Koşma")
 @export var run_speed: float = 7.0
 @export var ground_accel: float = 60.0
 @export var ground_decel: float = 70.0
 @export_range(0.0, 1.0) var air_control: float = 0.65
+## Havada koşu hızının üstündeki momentumun azalma hızı (m/s²), girdi aynı yöndeyken.
+@export var air_overspeed_drag: float = 3.0
 @export var rail_pull: float = 10.0
 
 @export_group("Zıplama")
@@ -21,6 +51,8 @@ extends Resource
 @export_group("Sallanma")
 @export var auto_grab: bool = true
 @export var grab_radius: float = 1.4
+## El, tutturma noktasının en az bu kadar altında olmalı (üstten yakalama yok).
+@export var grab_min_below_anchor: float = 0.6
 @export var min_rope: float = 2.0
 @export var max_rope: float = 7.0
 @export var swing_gravity: float = 24.0
@@ -30,8 +62,29 @@ extends Resource
 @export var rope_reel_speed: float = 3.0
 @export var release_boost: float = 1.1
 @export var release_jump_bonus: float = 6.0
-@export var perfect_release_bonus: float = 1.15
 @export var regrab_cooldown: float = 0.35
+## Duvara/zemine çarpınca açısal hızın çarpanı (negatif = sekme).
+@export var swing_bounce: float = -0.25
+
+@export_group("Mükemmel bırakma")
+## Salınımın ileri-yukarı kolunda bu açı aralığında zıplayarak bırakma = bonus (karar: 2026-11-25).
+@export var perfect_release_min_deg: float = 35.0
+@export var perfect_release_max_deg: float = 70.0
+@export var perfect_release_bonus: float = 1.15
+
+@export_group("Tırmanma")
+@export var climb_grab_radius: float = 0.7
+@export var climb_speed: float = 3.5
+## Tırmanma sarmaşığından yana zıplamada yatay hız.
+@export var climb_jump_speed_x: float = 6.5
+@export var climb_jump_height: float = 1.8
+## Yana zıplamadan sonra yatay girdinin hızı bozamadığı süre (Celeste tarzı kilit).
+@export var climb_jump_lock: float = 0.15
+## Tırmanma sarmaşığına ilk tutunmada aşağı kayma hızı sönümlenir; bu süre içinde yeniden tutunulamaz.
+@export var climb_regrab_cooldown: float = 0.25
+
+@export_group("Görsel")
+@export var turn_speed: float = 14.0
 
 @export_group("Güvenlik")
 @export var kill_y: float = -15.0
@@ -39,3 +92,16 @@ extends Resource
 
 func get_jump_velocity() -> float:
 	return sqrt(2.0 * gravity_up * jump_height)
+
+
+func get_climb_jump_velocity() -> float:
+	return sqrt(2.0 * gravity_up * climb_jump_height)
+
+
+## Canlı tuning değerlerini .tres'e yapıştırılabilir metin olarak döndürür.
+func to_tres_snippet() -> String:
+	var lines: PackedStringArray = []
+	for field: Array in LIVE_FIELDS:
+		var key: String = field[0]
+		lines.append("%s = %s" % [key, str(get(key))])
+	return "\n".join(lines)

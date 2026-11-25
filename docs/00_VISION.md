@@ -42,3 +42,9 @@
 | 2026-11-24 | Hikaye kancası: Düşüş ve dönüş; kahramanı annesi korumak için aşağı bırakmış | Duygusal çekirdek + büyük büküm |
 | 2026-11-24 | Önce dikey dilim | Riskli mekanikleri (sallanma, kamera geçişi, AI sanat) erken kanıtlamak |
 | 2026-11-24 | Saf GDScript çekirdek, GDExtension zorunlu değil | Web test build'i bozmamak için |
+| 2026-11-25 | Mükemmel bırakma = ileri-yukarı kolda 35°–70° (tepe ±8° değil) | Tepede hız ≈ 0, bonus anlamsızdı; 35°–70° en uzun atış açısına denk gelir (Sütun 1) |
+| 2026-11-25 | Havada koşu hızı üstündeki momentum kırpılmaz | Sallanmadan çıkan hız 0.06 sn'de 7 m/s'ye düşüyordu; akış hissini öldürüyordu (Sütun 1) |
+| 2026-11-25 | Sarmaşık zincirleri yükselen dizilir (+2.5 m / 6 m) | Bırakma zıplama bonusu yayı yukarı taşır; zincir doğal olarak yukarı akar (Sütun 2) |
+| 2026-11-25 | M1–M3 test odaları kodla kurulan greybox (`GreyboxRoom`), 0–3 tuşu ile seçilir | Oda/kapı sistemi M4'te; şimdilik web build'de hızlı erişim |
+| 2026-11-25 | Debug HUD'da canlı tuning paneli (F2) + "Kopyala" | Hareket hissi web build'de oynanarak ayarlanır, değerler .tres'e taşınır |
+| 2026-11-25 | M3'te Phantom Camera denenecek; sorun çıkarsa kendi CameraRig'imizle devam | Kullanıcı kararı; CameraDirector API'si sabit kalır |

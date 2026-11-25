@@ -27,9 +27,18 @@ cd /tmp && curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/
   && unzip -o -q godot.zip && mv Godot_v4.6.3-stable_linux.x86_64 /usr/local/bin/godot
 
 godot --headless --path . --import                              # .godot/ + sınıf önbelleği
-godot --headless --path . res://tests/validate_scripts.tscn     # tüm scriptler derleniyor mu
-godot --headless --path . res://tests/test_movement.tscn        # hareket/sallanma/kamera duman testi
+godot --headless --fixed-fps 60 --path . res://tests/validate_scripts.tscn   # tüm scriptler derleniyor mu
+godot --headless --fixed-fps 60 --path . res://tests/test_movement.tscn      # M0 duman testi
+godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn            # M1 hareket + bot oda geçişi
+
+# Web export şablonları (oturum başına bir kez, ~80 MB; yalnızca web dosyaları çıkarılır)
+mkdir -p /tmp/tpl && cd /tmp/tpl && curl -sSL -o t.tpz https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_export_templates.tpz \
+  && unzip -o -q t.tpz 'templates/web_nothreads_*' 'templates/version.txt' \
+  && mkdir -p ~/.local/share/godot/export_templates/4.6.3.stable && cp templates/* ~/.local/share/godot/export_templates/4.6.3.stable/ && rm t.tpz
+
+tools/deploy_web.sh "M_x web build"   # export (preset "Web") → build/web → gh-pages dalı
 ```
+`--fixed-fps 60` testleri gerçek zamandan bağımsız (hızlı) çalıştırır. Oynanabilir link: https://owalkerr.github.io/bayterek/
 Çıkış kodu 0 olmalı ve çıktıda `SCRIPT ERROR` geçmemeli. `godot --check-only -s` autoload'ları tanımaz; ona güvenme.
 
 ## Dokümanlar
@@ -52,4 +61,5 @@ godot --headless --path . res://tests/test_movement.tscn        # hareket/sallan
 - Yeni sayı/mekanik eklendiyse ilgili doküman güncellendi.
 - Önemli tasarım kararı → `docs/00_VISION.md` karar kaydına bir satır.
 - Milestone durumu `docs/09_ROADMAP.md` içinde güncellendi.
+- Milestone sonunda web build `gh-pages`'a push edildi.
 - Kullanıcıya kısa rapor: ne yapıldı, nasıl test edildi, sıradaki adım.

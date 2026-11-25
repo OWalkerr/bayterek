@@ -20,6 +20,17 @@ func set_mode(new_mode: int, duration: float = 1.0, depth_yaw_degrees: float = 0
 	EventBus.camera_mode_changed.emit(new_mode)
 
 
+## Oda değişimi / ışınlanma: geçişsiz SIDE moduna dön ve kamerayı hedefe oturt.
+func reset_to_side() -> void:
+	var changed := mode != CameraRig.Mode.SIDE
+	mode = CameraRig.Mode.SIDE
+	if is_instance_valid(rig):
+		rig.apply_mode(mode, 0.0, 0.0)
+		rig.snap_to_target()
+	if changed:
+		EventBus.camera_mode_changed.emit(mode)
+
+
 func is_side_mode() -> bool:
 	return mode == CameraRig.Mode.SIDE
 

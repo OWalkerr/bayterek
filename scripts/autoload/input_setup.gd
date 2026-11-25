@@ -17,6 +17,13 @@ func _enter_tree() -> void:
 	_add_action("heal", [KEY_L], [JOY_BUTTON_B], [])
 	_add_action("pause", [KEY_ESCAPE], [JOY_BUTTON_START], [])
 	_add_action("toggle_debug", [KEY_F1], [JOY_BUTTON_BACK], [])
+	# Geliştirme kısayolları (M1 test odaları + canlı tuning). M4'te oda seçici kalkar.
+	_add_action("toggle_tuning", [KEY_F2], [], [])
+	_add_action("restart_room", [KEY_R], [], [])
+	_add_action("room_0", [KEY_0], [], [])
+	_add_action("room_1", [KEY_1], [], [])
+	_add_action("room_2", [KEY_2], [], [])
+	_add_action("room_3", [KEY_3], [], [])
 
 
 func _add_action(action: String, keys: Array, buttons: Array, axes: Array) -> void:

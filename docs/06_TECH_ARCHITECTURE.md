@@ -31,9 +31,10 @@ res://
 │   └── ui/
 ├── scripts/
 │   ├── autoload/            # EventBus, GameState, CameraDirector, SceneRouter…
-│   ├── player/  camera/  world/  enemies/  ui/
+│   ├── player/  camera/  world/{rooms}/  enemies/  ui/  fx/
 │   └── core/                # StateMachine, utilities
-└── tests/                   # headless test sahneleri
+├── tests/                   # headless test sahneleri
+└── tools/                   # deploy_web.sh (gh-pages)
 ```
 
 ## Autoload'lar (singleton)
@@ -78,9 +79,31 @@ Prototipte durumlar tek dosyada (`player.gd`, enum + match). Dosya 400 satırı 
 - Dosya teslimi: değişen dosyalar **tam dosya** olarak yazılır (diff değil).
 
 ## Test
-- `tests/` altında headless test sahneleri: derleme kontrolü (`validate_scripts.tscn`), hareket simülasyonu (`test_movement.tscn`).
-- Çalıştırma: `godot --headless --path . res://tests/validate_scripts.tscn` → çıkış kodu 0 olmalı, `SCRIPT ERROR` olmamalı.
-- Her milestone sonunda web export alınır ve tarayıcıda oynanır.
+- `tests/` altında headless test sahneleri:
+  | Sahne | Kapsam |
+  |---|---|
+  | `validate_scripts.tscn` | `scripts/` altındaki tüm .gd dosyaları derleniyor mu |
+  | `test_movement.tscn` | M0 duman testi: koşma, zıplama, sallanma, mağara kamerası, güvenli nokta |
+  | `test_m1.tscn` | Coyote, jump buffer, tırmanma, çürük sarmaşık, mükemmel bırakma + **bot ile 3 odanın geçilmesi** |
+- Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
+  `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
+- **Girdi simülasyonu tuzağı:** Godot 4.6'da `Input.action_press()` bir sonraki fizik karesinde "just pressed" olur; testte tuş en az 2–3 kare basılı tutulmalı.
+- **Bot:** `test_m1.gd` içindeki bot yönü basılı tutar, kenarda/tırmanma sarmaşığı önünde zıplar, sallanırken salınım yönünde pompalar ve açı > 40° & ω > 0 iken bırakır. `BOT_ANGLE=50` ile bırakma açısı, `BOT_ONLY=1` ile yalnızca bot, `BOT_DEBUG=1` ile kare kare iz alınır.
+- Her milestone sonunda web export alınır: `tools/deploy_web.sh "mesaj"` → `build/web/` → `gh-pages` dalı (main'e build girmez). Oynanabilir link: https://owalkerr.github.io/bayterek/
+
+## Geliştirme Kısayolları (M1–M3, M4'te kalkar)
+| Tuş | İşlev |
+|---|---|
+| 0–3 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit) |
+| R | Odayı baştan başlat |
+| F1 | Debug bilgisi (durum, konum, coyote/buffer, θ/ω/L, mükemmel pencere) |
+| F2 | Canlı tuning paneli (kaydırıcılar, "Kopyala" → .tres metni) |
+
+## Greybox Oda Altyapısı (M1)
+- `scripts/world/greybox_level.gd` (main.tscn kökü): ortam, oyuncu, CameraRig, DebugHud ve oda yükleyici (`load_room(i)`).
+- `scripts/world/greybox_room.gd` (`GreyboxRoom`): kodla oda kurma yardımcıları (`box`, `platform`, `vine`, `rotten_vine`, `climb_vine`, `glow`, `place_goal`, `camera_zone`).
+- `scripts/world/rooms/room_XX_*.gd`: test odaları. Her oda `room_id`, `display_name`, `idea` ("bir oda = bir fikir"), `spawn_point` ve bir `RoomGoal` tanımlar.
+- `scripts/ui/`: `DebugHud`, `TuningPanel`, `UiStyle` (docs/08 paleti). `scripts/fx/`: `ReleaseSpark`.
 
 ## Performans Bütçesi (PC orta seviye / web)
 | Kalem | PC | Web |

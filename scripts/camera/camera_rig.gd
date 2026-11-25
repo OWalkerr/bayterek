@@ -108,6 +108,13 @@ func _mode_transform(m: Mode) -> Transform3D:
 	return Transform3D(Basis.IDENTITY, pivot + offset).looking_at(pivot, Vector3.UP)
 
 
+func snap_to_target() -> void:
+	_lookahead = 0.0
+	_pullback = 0.0
+	_snap()
+	camera.reset_physics_interpolation()
+
+
 func _snap() -> void:
 	if target == null:
 		return

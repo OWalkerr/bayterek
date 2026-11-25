@@ -9,10 +9,13 @@ const GROUP: StringName = &"vine_anchor"
 @export var enabled: bool = true
 @export var vine_color: Color = Color("5e8c4a")
 @export var idle_sway: float = 0.12
+@export var idle_sway_speed: float = 1.3
 
 var _grabbed: bool = false
 var _time: float = 0.0
 var _vine_mesh: MeshInstance3D
+var _vine_material: StandardMaterial3D
+var _hand_offset: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -23,11 +26,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_time += delta
 	if _grabbed:
 		return
-	_time += delta
-	var sway := Vector3(sin(_time * 1.3) * idle_sway, 0.0, 0.0)
-	_set_vine_end(global_position + Vector3.DOWN * vine_length + sway)
+	var sway := Vector3(sin(_time * idle_sway_speed) * idle_sway, 0.0, 0.0)
+	_set_vine_end(global_position + Vector3.DOWN * vine_length + sway + _hand_offset)
 
 
 ## Bir noktanın sarmaşık çizgisine (tutturma noktası → uç) en kısa mesafesi.
@@ -39,25 +42,37 @@ func distance_to_vine(point: Vector3) -> float:
 	return point.distance_to(a + ab * t)
 
 
+func is_grabbed() -> bool:
+	return _grabbed
+
+
 func set_grabbed(value: bool) -> void:
+	if value == _grabbed:
+		return
 	_grabbed = value
+	_on_grab_changed(value)
+
+
+## Alt sınıflar (ör. RottenVine) için kanca.
+func _on_grab_changed(_value: bool) -> void:
+	pass
 
 
 func update_vine_visual(hand_position: Vector3) -> void:
-	_set_vine_end(hand_position)
+	_set_vine_end(hand_position + _hand_offset)
 
 
 func _build_visual() -> void:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = vine_color
-	mat.roughness = 0.9
+	_vine_material = StandardMaterial3D.new()
+	_vine_material.albedo_color = vine_color
+	_vine_material.roughness = 0.9
 
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = 0.06
 	cyl.bottom_radius = 0.05
 	cyl.height = 1.0
 	cyl.radial_segments = 6
-	cyl.material = mat
+	cyl.material = _vine_material
 	_vine_mesh = MeshInstance3D.new()
 	_vine_mesh.mesh = cyl
 	_vine_mesh.top_level = true

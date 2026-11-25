@@ -8,7 +8,7 @@ description: Use when working on the BAYTEREK Godot 4.6 project (2.5D vertical m
 ## 1. Oturum başlangıcı
 1. `CLAUDE.md` ve `docs/09_ROADMAP.md` oku → aktif milestone.
 2. Godot 4.6.3'ü kur (CLAUDE.md'deki komut), `--import` çalıştır.
-3. `validate_scripts.tscn` ve `test_movement.tscn` çalıştır; ikisi de çıkış 0 vermeli.
+3. `validate_scripts.tscn`, `test_movement.tscn` ve sonraki milestone testlerini (`test_m1.tscn` …) `--fixed-fps 60` ile çalıştır; hepsi çıkış 0 vermeli.
 4. Kullanıcıya tek satırda durumu söyle: "M_x aktif, testler yeşil/kırmızı."
 
 ## 2. Yeni özellik eklerken
@@ -21,7 +21,8 @@ description: Use when working on the BAYTEREK Godot 4.6 project (2.5D vertical m
 
 ## 3. Hareket hissi işleri (M1)
 - Sallanma: kinematik sarkaç; tutunurken hız → açısal hız; bırakırken teğet hız × boost (+ zıplama bonusu).
-- Oynanabilirliği bot ile doğrula: bot sağa basılı tutar, açı > 40° ve ω > 0 iken zıplar; hedef platforma ulaşıyor mu?
+- Oynanabilirliği bot ile doğrula (`tests/test_m1.gd`): bot yönü basılı tutar, salınım yönünde pompalar, açı > 40° ve ω > 0 iken zıplar; hedefe ulaşıyor mu? `BOT_ANGLE` ile 30–70° taraması yap.
+- Testte `Input.action_press` en az 2–3 kare basılı tutulmalı (4.6'da "just pressed" bir sonraki karede).
 - Oda geometrisi ölçekleri: docs/02 §Oda Tasarım Kuralları.
 
 ## 4. Sanat entegrasyonu

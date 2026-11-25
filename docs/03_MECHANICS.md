@@ -10,6 +10,7 @@ Oyuncu `CharacterBody3D`; yan modda **Z ekseni 0'a kilitli**, hareket X (yatay) 
 | Koşma hızı | 7.0 m/s | |
 | Hızlanma / yavaşlama (yerde) | 60 / 70 m/s² | Çabuk tepki |
 | Havada kontrol | %65 | |
+| Havada momentum koruma | Koşu hızının üstündeyken ve girdi aynı yöndeyse hız kırpılmaz; 3 m/s² sürtünme | `air_overspeed_drag` — sallanma çıkışı hızı korunur (Sütun 1) |
 | Zıplama yüksekliği | 2.2 m | Zıplama hızı yükseklikten hesaplanır |
 | Yerçekimi (yükselirken / düşerken) | 24 / 42 m/s² | Düşüş daha hızlı → tok his |
 | Değişken zıplama | Tuş bırakılınca dikey hız × 0.45 | |
@@ -23,9 +24,9 @@ Oyuncu `CharacterBody3D`; yan modda **Z ekseni 0'a kilitli**, hareket X (yatay) 
 | Tür | Davranış |
 |---|---|
 | **Sallanma Sarmaşığı** (`VineAnchor`) | Sabit bir noktadan sarkan sarmaşık. Tutunulunca sarkaç fiziği. |
-| **Tırmanma Sarmaşığı** (`ClimbVine`) | Dikey sarmaşık; yukarı/aşağı tırmanma, yana zıplama. |
+| **Tırmanma Sarmaşığı** (`ClimbVine`) | Dikey sarmaşık; yukarı/aşağı tırmanma, yana zıplama (bkz. §2.3). |
 | **Kanca Çiçeği** (`GrappleFlower`) | Kamçı Kancası ile uzaktan tutulur, sarkaç başlar. |
-| **Çürük Sarmaşık** | Tutunulunca 1.5 sn sonra kopar. |
+| **Çürük Sarmaşık** (`RottenVine`) | İlk tutunmadan 1.5 sn sonra kopar (bırakılsa da sayaç durmaz), 4 sn sonra yeniden büyür. Kopmaya yaklaştıkça titrer, mordan göz sarısına döner. |
 | **Diken Sarmaşık** | Tutunulursa hasar verir; ancak kamçıyla temizlenir. |
 | **Yetiştirilen Sarmaşık** | Tohum Atışı ile oyuncunun yarattığı geçici sallanma noktası. |
 
@@ -43,6 +44,7 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 | Parametre | Değer |
 |---|---|
 | Tutunma yarıçapı (otomatik yakalama) | 1.4 m |
+| Tutturma noktasının altında olma şartı | El, tutturma noktasının en az 0.6 m altında olmalı (üstten yakalama momentumu sıfırlıyordu) |
 | İp uzunluğu | Tutunma anındaki mesafe (min 2, maks 7 m) |
 | Pompalama kuvveti (input ile) | 9 m/s² |
 | Sönümleme | 0.15 |
@@ -51,11 +53,25 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 | Bırakma: zıplama bonusu | +6 m/s yukarı |
 | Yeniden yakalama bekleme süresi | Aynı sarmaşık 0.35 sn, başka sarmaşık 0 sn |
 | Yukarı/aşağı ile ip kısaltma/uzatma | 3 m/s |
+| Duvara/zemine çarpma | Açısal hız × -0.25 (sekme) |
+| Mükemmel bırakma penceresi | Salınımın ileri-yukarı kolunda (θ ile ω aynı işaretli) **35°–70°** |
+| Mükemmel bırakma bonusu | Hız × 1.15 + altın ışıltı (`ReleaseSpark`) |
 
 **His kuralları:**
 - Tutunma anında oyuncunun mevcut hızı açısal hıza çevrilir → momentum kaybolmaz.
-- Bırakma tepe noktasına yakınsa "mükemmel bırakma" penceresi (±8°): ekstra %15 hız + küçük ışık efekti.
+- Zıplayarak bırakma salınımın ileri-yukarı kolunda 35°–70° arasındaysa "mükemmel bırakma": ekstra %15 hız + küçük ışık efekti. (Eski tarif "tepe noktası ±8°" idi; tepede hız ≈ 0 olduğu için ödülsüz kalıyordu → karar 2026-11-25.)
+- Bot ölçümü (M1): Savrulma Zinciri odası 30°–70° arası her bırakma açısıyla geçilebiliyor → zamanlama toleransı geniş; Çürük Geçit 50°'de bekleyen oyuncuyu cezalandırıyor (tasarım gereği).
 - Sarmaşıktan sarmaşığa zincir geçişlerde kamera hafifçe uzaklaşır (hız hissi).
+
+### 2.3 Tırmanma sarmaşığı
+| Parametre | Değer | Not |
+|---|---|---|
+| Tutunma yarıçapı | 0.7 m | Havadayken el sarmaşık çizgisine bu kadar yaklaşınca |
+| Tırmanma hızı | 3.5 m/s | Yukarı/aşağı; uçlarda 0.15 m pay |
+| Yana zıplama | 6.5 m/s yatay + 1.8 m yükseklik | Yön tuşu basılıyken zıpla |
+| Yana zıplama girdi kilidi | 0.15 sn | Celeste tarzı; zıplama yönü bozulmaz |
+| Yön tuşsuz zıplama | Yukarı sıçrama | Aynı sarmaşığa 0.25 sn sonra tekrar tutunulur → hızlı tırmanma |
+| Aşağı + alt uç / yere değme | Sarmaşığı bırakır | |
 
 ## 3. Savaş — Sarmaşık Kamçısı "Çatal"
 | Hamle | Girdi | Etki |
