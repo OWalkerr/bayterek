@@ -25,7 +25,7 @@ Oyuncu `CharacterBody3D`; yan modda **Z ekseni 0'a kilitli**, hareket X (yatay) 
 |---|---|
 | **Sallanma Sarmaşığı** (`VineAnchor`) | Sabit bir noktadan sarkan sarmaşık. Tutunulunca sarkaç fiziği. |
 | **Tırmanma Sarmaşığı** (`ClimbVine`) | Dikey sarmaşık; yukarı/aşağı tırmanma, yana zıplama (bkz. §2.3). |
-| **Kanca Çiçeği** (`GrappleFlower`) | Kamçı Kancası ile uzaktan tutulur, sarkaç başlar. |
+| **Kanca Çiçeği** (`GrappleFlower`) | Kamçı Kancası ile uzaktan tutulur, sarkaç başlar. Otomatik yakalanmaz; yetenek yokken de görünür; hedef seçilince altın parlar (M5). |
 | **Çürük Sarmaşık** (`RottenVine`) | İlk tutunmadan 1.5 sn sonra kopar (bırakılsa da sayaç durmaz), 4 sn sonra yeniden büyür. Kopmaya yaklaştıkça titrer, mordan göz sarısına döner. |
 | **Diken Sarmaşık** | Tutunulursa hasar verir; ancak kamçıyla temizlenir. |
 | **Yetiştirilen Sarmaşık** | Tohum Atışı ile oyuncunun yarattığı geçici sallanma noktası. |
@@ -99,17 +99,36 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 
 ### 3.2 Can (M2, `PlayerTuning` "Can")
 - **Can sistemi:** Can "yaprak" olarak gösterilir; başlangıç 5 yaprak (`GameState.leaves` / `max_leaves`).
-- **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır. *(M5+)*
+- **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır (§3.4, M5).
 - **Hasar alma:** 0.8 sn dokunulmazlık (yanıp sönme), 0.25 sn kontrolsüz geri itilme (6 m/s yatay, 5 m/s yukarı).
 - **Çukura düşüş:** Son güvenli noktaya dönüş + **1 yaprak** (karar 2026-11-25), geri itilme yok.
 - **Ölüm (0 yaprak):** "Alpay düştü…" → 1.2 sn sonra **son Ocak'ta tam canla** (M4, karar 2026-11-25); hiç Ocak'ta dinlenilmediyse mevcut odanın başında. Düşmanlar oda yeniden yüklendiği için yeniden doğar.
 - **Hit-stop:** Vuruşta 50 ms, boss'a kritik vuruşta 100 ms; kamera titremesi küçük.
 
+### 3.3 Kamçı Kancası (M5, `PlayerTuning` "Kamçı Kancası")
+| Parametre | Değer | Not |
+|---|---|---|
+| Menzil | 8 m | El noktasından; görüş hattı (dünya katmanı) açık olmalı |
+| Hedef seçimi | puan = mesafe − 3 × (girdi/bakış yönü · çiçek yönü) | Yön tuşu basılıysa o yöndeki, yoksa bakış yönü + biraz yukarı |
+| İp | Tutunma anındaki mesafe (≤ 8 m) → 8 m/s ile **4.5 m**'ye çekilir | W/S basılıyken çekme durur (elle kısalt/uzat) |
+| Kullanılabildiği durumlar | Yerde, havada, sallanırken (başka çiçeğe/sarmaşığa zincir), tırmanırken | Sallanırken kanca: önceki sarkaç momentumuyla bırakılır, yenisi başlar |
+| Kazanma | Sunak Odası (bölge ortası, karar 2026-11-25) | Yetenek kazanma ekranı + otomatik kayıt |
+
+### 3.4 Öz ve iyileşme (M5, `PlayerTuning` "Öz ve iyileşme")
+| Parametre | Değer |
+|---|---|
+| Öz üst sınırı | 99 (`GameState.SAP_MAX`) |
+| Kamçı isabeti başına | +11 (düşman başına; Savrulma Saldırısı dahil) |
+| İyileşme | Yerde **L basılı 1 sn** → +1 yaprak, −33 Öz; basılı kalırsa tekrarlar |
+| Kesilme | Tuş bırakılınca, havaya kalkınca, hasar alınca (yarım süre kaybolur), Öz < 33 ya da can doluyken başlamaz |
+| Ölüm | Öz sıfırlanır |
+| Para (Öz damlası) | Yuva Dalları'na (tüccar) kadar yok — karar 2026-11-25 |
+
 ## 4. Yetenek Ağacı (kazanılma sırası)
 | # | Yetenek | Fiil | Bölge |
 |---|---|---|---|
 | 0 | Koş / Zıpla / Tutun / Sallan / Kamçı | temel | Başlangıç |
-| 1 | **Kamçı Kancası** | uzaktan tutun | Kök Dibi |
+| 1 | **Kamçı Kancası** | uzaktan tutun | Kök Dibi — Sunak Odası (✅ M5) |
 | 2 | **Öz Çekimi** | çek / çekil | Öz Damarları |
 | 3 | **Kabuk Pençesi** | duvara tutun, duvar zıplaması | Kabuk Duvarı |
 | 4 | **Yaprak Pelerin** | süzül, rüzgârla yüksel | Yuva Dalları |

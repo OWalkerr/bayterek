@@ -34,7 +34,7 @@ func setup(target: Player, room_names: PackedStringArray) -> void:
 	layer = 10
 
 	_info = UiStyle.label("", UiStyle.FONT_SIZE_SMALL)
-	_info.position = Vector2(24.0, 64.0)
+	_info.position = Vector2(24.0, 86.0)
 	add_child(_info)
 
 	_room_title = UiStyle.label("", UiStyle.FONT_SIZE, UiStyle.SAP_GOLD)
@@ -142,7 +142,7 @@ func _build_room_menu() -> void:
 	box.add_child(UiStyle.label(
 			"A/D hareket · Space zıpla/bırak · W/S ip kısalt-uzat, tırman\n" \
 			+ "J / sol tık kamçı (W+J yukarı, havada S+J aşağı = pogo)\n" \
-			+ "Ocak yanında W: dinlen/kaydet · Tab harita\n" \
+			+ "K / sağ tık kanca (Sunak'tan sonra) · L basılı iyileş · Ocak yanında W: dinlen · Tab harita\n" \
 			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning",
 			UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM))
 	add_child(_room_menu)

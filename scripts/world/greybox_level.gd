@@ -16,6 +16,7 @@ var room: GreyboxRoom
 var room_index: int = -1
 var game_hud: GameHud
 var map_screen: MapScreen
+var ability_toast: AbilityToast
 var _death_timer: float = -1.0
 
 
@@ -33,6 +34,8 @@ func _ready() -> void:
 	add_child(game_hud)
 	map_screen = MapScreen.new()
 	add_child(map_screen)
+	ability_toast = AbilityToast.new()
+	add_child(ability_toast)
 	EventBus.vine_released.connect(_on_vine_released)
 	EventBus.player_died.connect(_on_player_died)
 	EventBus.game_saved.connect(func(_s: int) -> void: hud.show_save_icon())

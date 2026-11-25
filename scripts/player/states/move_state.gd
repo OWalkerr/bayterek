@@ -17,6 +17,10 @@ func physics_update(delta: float) -> void:
 	if on_floor:
 		p.coyote_timer = t.coyote_time
 		p.change_state(Player.State.GROUND)
+		# İyileşme: yerdeyken L basılı (docs/03) — yeterli Öz ve eksik can varsa
+		if Input.is_action_pressed(&"heal") and PlayerHealState.can_start(p):
+			p.change_state(Player.State.HEAL)
+			return
 	else:
 		p.change_state(Player.State.AIR)
 

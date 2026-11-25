@@ -5,7 +5,7 @@ extends CharacterBody3D
 ## tutunma seçimini ve can/hasar akışını tutar.
 ## Yan modda (2.5D) Z ekseni raya kilitlidir; derinlik modunda X-Z serbesttir.
 
-enum State { GROUND, AIR, SWING, CLIMB, HURT, DEAD, CINEMATIC }
+enum State { GROUND, AIR, SWING, CLIMB, HURT, DEAD, CINEMATIC, HEAL }
 
 const HAND_HEIGHT: float = 1.45
 const CLIMB_END_MARGIN: float = PlayerClimbState.END_MARGIN
@@ -38,6 +38,9 @@ var climb_state: PlayerClimbState
 var hurt_state: PlayerHurtState
 var dead_state: PlayerDeadState
 var cinematic_state: PlayerCinematicState
+var heal_state: PlayerHealState
+## Kanca hedefi (her karede seçilir; vurgulanır).
+var grapple_target: GrappleFlower = null
 
 var _states: Dictionary = {}       # State -> PlayerState
 var _last_safe_position: Vector3 = Vector3.ZERO
@@ -55,11 +58,13 @@ func _init() -> void:
 	hurt_state = PlayerHurtState.new(self)
 	dead_state = PlayerDeadState.new(self)
 	cinematic_state = PlayerCinematicState.new(self)
+	heal_state = PlayerHealState.new(self)
 	_states = {
 		State.GROUND: move_state, State.AIR: move_state,
 		State.SWING: swing_state, State.CLIMB: climb_state,
 		State.HURT: hurt_state, State.DEAD: dead_state,
 		State.CINEMATIC: cinematic_state,
+		State.HEAL: heal_state,
 	}
 
 
@@ -77,6 +82,7 @@ func _physics_process(delta: float) -> void:
 	if delta <= 0.0:
 		return
 	_update_timers(delta)
+	_update_grapple()
 	(_states[state] as PlayerState).physics_update(delta)
 	_update_visual(delta)
 	_check_fall_out()
@@ -291,6 +297,60 @@ func input_to_world(input: Vector2) -> Vector3:
 func _on_camera_mode_changed(new_mode: int) -> void:
 	if new_mode == CameraRig.Mode.SIDE and is_inside_tree():
 		rail_z = SideRail.find_rail_z(get_tree(), global_position, default_rail_z)
+
+
+# ---------------------------------------------------------------- Kamçı Kancası
+
+func can_grapple() -> bool:
+	return GameState.has_ability(&"whip_grapple") and (state == State.GROUND or state == State.AIR \
+			or state == State.SWING or state == State.CLIMB)
+
+
+## Menzildeki, görüş hattı açık, girdi/bakış yönüne en uygun kanca çiçeği.
+func find_grapple_target() -> GrappleFlower:
+	var hand := get_hand_position()
+	var aim := input_to_world(get_move_input())
+	if aim.length() < 0.2:
+		aim = facing
+	aim = (aim + Vector3.UP * 0.5).normalized()
+	var space := get_world_3d().direct_space_state
+	var best: GrappleFlower = null
+	var best_score := INF
+	for node: Node in get_tree().get_nodes_in_group(GrappleFlower.FLOWER_GROUP):
+		var f := node as GrappleFlower
+		if f == null or not f.enabled:
+			continue
+		if state == State.SWING and swing_state.anchor == f:
+			continue
+		var to := f.global_position - hand
+		var d := to.length()
+		if d > tuning.grapple_range or d < 0.5:
+			continue
+		var q := PhysicsRayQueryParameters3D.create(hand, f.global_position, Layers.WORLD)
+		if not space.intersect_ray(q).is_empty():
+			continue
+		var score := d - tuning.grapple_aim_weight * aim.dot(to / d)
+		if score < best_score:
+			best_score = score
+			best = f
+	return best
+
+
+func _update_grapple() -> void:
+	var target: GrappleFlower = find_grapple_target() if can_grapple() else null
+	if target != grapple_target:
+		if is_instance_valid(grapple_target):
+			grapple_target.set_targeted(false)
+		grapple_target = target
+		if target != null:
+			target.set_targeted(true)
+	if target != null and Input.is_action_just_pressed(&"grapple"):
+		if state == State.SWING:
+			swing_state.release(false)
+		elif state == State.CLIMB:
+			climb_state.release(Vector3.ZERO, false)
+		swing_state.begin(target, true)
+		EventBus.grapple_attached.emit(target)
 
 
 # ---------------------------------------------------------------- Tutunma seçimi

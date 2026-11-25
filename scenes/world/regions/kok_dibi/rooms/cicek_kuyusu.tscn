@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_14_cicek_kuyusu.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+
+[node name="CicekKuyusu" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"cicek_kuyusu"
+display_name = "Çiçek Kuyusu"
+idea = "Tırmanma + kanca: dikey yükseliş"
+region = &"kok_dibi"
+map_cell = Vector2i(12, 1)
+map_size = Vector2i(1, 2)
+spawn_point = Vector3(-3.0, 0.5, 0.0)
+
+[node name="DoorWestBottom" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"west_bottom"
+target_room = &"spor_mahzeni"
+target_door = &"east"
+arrive_offset = Vector3(1.7, 0.1, 0.0)
+
+[node name="DoorEastTop" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.2, 22.5, 0.0)
+script = ExtResource("2_door")
+door_id = &"east_top"
+target_room = &"kokyiyen_esigi"
+target_door = &"west"
+arrive_offset = Vector3(-1.7, 0.1, 0.0)
+requires = &"whip_grapple"

@@ -130,6 +130,7 @@ func _apply_hits() -> void:
 		if enemy.take_hit(current_damage, player.get_body_center(), KIND_NAMES[kind]):
 			hits_this_attack += 1
 			hit_any = true
+			GameState.add_sap(player.tuning.sap_per_hit)
 	if hit_any:
 		if kind == Kind.DOWN:
 			player.bounce(player.tuning.pogo_velocity)

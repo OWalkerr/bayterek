@@ -61,6 +61,7 @@ func enter_room_immediate(room_id: StringName, door_id: StringName = &"", positi
 ## Son Ocak'ta (yoksa mevcut/başlangıç odasının başında) tam canla dirilme.
 func respawn_at_last_ocak() -> Room:
 	GameState.reset_health()
+	GameState.spend_sap(GameState.sap)   # ölüm Öz'ü sıfırlar
 	if GameState.has_last_ocak() and RoomRegistry.has_room(GameState.last_ocak_room):
 		var room := enter_room_immediate(GameState.last_ocak_room)
 		var ocak := room.get_ocak(GameState.last_ocak) if room != null else null

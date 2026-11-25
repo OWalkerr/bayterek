@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_11_kanca_bahcesi.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+
+[node name="KancaBahcesi" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"kanca_bahcesi"
+display_name = "Kanca Bahçesi"
+idea = "Sarmaşıksız uçurum: yalnızca kanca çiçekleri"
+region = &"kok_dibi"
+map_cell = Vector2i(8, 1)
+map_size = Vector2i(2, 1)
+spawn_point = Vector3(-6.0, 0.5, 0.0)
+
+[node name="DoorWest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"west"
+target_room = &"sunak"
+target_door = &"east"
+arrive_offset = Vector3(1.5, 0.1, 0.0)
+requires = &"whip_grapple"
+
+[node name="DoorEast" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.5, 1.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"east"
+target_room = &"spor_mahzeni"
+target_door = &"west"
+arrive_offset = Vector3(-1.5, 0.1, 0.0)
+requires = &"whip_grapple"

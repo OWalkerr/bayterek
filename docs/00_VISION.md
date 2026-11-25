@@ -63,3 +63,8 @@
 | 2026-11-25 | Her oda .tscn (kimlik, harita hücresi, kapılar) + geometri kodda | Kullanıcı kararı; editör açılmıyor, M7'de modeller aynı sahneye |
 | 2026-11-25 | Harita: MetSys yerine kendi ızgaramız (MapService, SceneState'ten okur) | MetSys 2D sahne odaklı; tek veri kaynağı oda sahneleri |
 | 2026-11-25 | Geliştirici oda seçici (0–5) web build'inde kalır, kayıt almaz | Oynanış testleri web'de; oyuncu kaydını kirletmesin |
+| 2026-11-25 | Kamçı Kancası bölge ortasında (Sunak Odası); Kökyiyen'in ödülü başka (Kut/hikaye) | Kullanıcı kararı; gör → kazan → geri dön döngüsü M5'te test edilir |
+| 2026-11-25 | Mevcut 6 oda kalır + 7 yeni oda (toplam 13) | Kullanıcı kararı; test edilmiş odalar bölgenin ilk yarısı |
+| 2026-11-25 | Öz barı + iyileşme (L 1 sn = 1 yaprak, 33 Öz) M5'te; para Yuva Dalları'nda | Kullanıcı kararı; savaşın risk/ödül döngüsü |
+| 2026-11-25 | Gizli oda = derinlik sırrı (sahte duvar, kamera dönünce kaybolur) | Kullanıcı kararı; Sütun 4 |
+| 2026-11-25 | Kapı gereksinimi veride (`RoomDoor.requires`) + botla fiziksel doğrulama | Soft-lock ve kapı sızıntısı otomatik yakalansın |

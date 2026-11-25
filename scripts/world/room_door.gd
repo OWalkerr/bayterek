@@ -13,6 +13,9 @@ const GROUP: StringName = &"room_door"
 ## Bu kapıdan odaya GİRİLİRKEN oyuncunun konacağı yer (kapıya göre, odanın içine doğru).
 @export var arrive_offset: Vector3 = Vector3(1.5, 0.1, 0.0)
 @export var enabled: bool = true
+## Bu kapıya oda İÇİNDEN ulaşmak için gereken yetenek (boşsa yok). Yalnızca veri:
+## harita testi yetenekli/yeteneksiz erişilebilirliği buradan hesaplar (docs/02 kapı matrisi).
+@export var requires: StringName = &""
 
 
 func _ready() -> void:

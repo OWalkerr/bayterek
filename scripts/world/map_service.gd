@@ -6,6 +6,7 @@ extends RefCounted
 
 const OCAK_SCRIPT: String = "res://scripts/world/ocak.gd"
 const DOOR_SCRIPT: String = "res://scripts/world/room_door.gd"
+const PICKUP_SCRIPT: String = "res://scripts/world/collectible.gd"
 
 static var _cache: Dictionary = {}
 
@@ -39,7 +40,7 @@ static func clear_cache() -> void:
 static func _read(state: SceneState) -> Dictionary:
 	var info: Dictionary = {
 		"name": "", "region": &"kok_dibi", "cell": Vector2i.ZERO, "size": Vector2i.ONE,
-		"has_ocak": false, "doors": [],
+		"has_ocak": false, "doors": [], "pickups": [],
 	}
 	for i in state.get_node_property_count(0):
 		var key := state.get_node_property_name(0, i)
@@ -58,12 +59,15 @@ static func _read(state: SceneState) -> Dictionary:
 			if key == &"script" and value is Script:
 				script_path = (value as Script).resource_path
 			props[key] = value
-		if script_path == OCAK_SCRIPT:
+		if script_path == PICKUP_SCRIPT:
+			info["pickups"].append(props.get(&"pickup_id", &""))
+		elif script_path == OCAK_SCRIPT:
 			info["has_ocak"] = true
 		elif script_path == DOOR_SCRIPT:
 			info["doors"].append({
 				"id": props.get(&"door_id", &""),
 				"target_room": props.get(&"target_room", &""),
 				"target_door": props.get(&"target_door", &""),
+				"requires": props.get(&"requires", &""),
 			})
 	return info

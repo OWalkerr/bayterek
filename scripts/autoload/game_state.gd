@@ -3,7 +3,9 @@ extends Node
 ## kayıt/yükleme (JSON, user://save_X.json — web'de tarayıcının IndexedDB'si).
 ## Kayıt zamanı (karar 2026-11-25): Ocak'ta dinlenince tam kayıt + her kapı geçişinde otomatik kayıt.
 
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3
+## Öz barı üst sınırı (docs/03 §3.2; 3 iyileşmelik).
+const SAP_MAX: int = 99
 const ABILITIES: Array[StringName] = [
 	&"whip_grapple",   # Kamçı Kancası
 	&"sap_pull",       # Öz Çekimi
@@ -28,6 +30,8 @@ var sap_drops: int = 0
 var max_leaves: int = 5
 ## Mevcut can (yaprak). Ölümde / Ocak'ta max_leaves'e döner.
 var leaves: int = 5
+## Öz (enerji): kamçı isabetiyle dolar, iyileşmede harcanır. Ölünce sıfırlanır.
+var sap: int = 0
 var current_room: StringName = &""
 ## Son dinlenilen Ocak (oda + Ocak kimliği). Boşsa ölümde mevcut odanın başına dönülür.
 var last_ocak: StringName = &""
@@ -48,6 +52,19 @@ func unlock_ability(id: StringName) -> void:
 func reset_health() -> void:
 	leaves = max_leaves
 	EventBus.player_healed.emit(leaves)
+
+
+func add_sap(amount: int) -> void:
+	sap = clampi(sap + amount, 0, SAP_MAX)
+	EventBus.player_sap_changed.emit(sap)
+
+
+func spend_sap(amount: int) -> bool:
+	if sap < amount:
+		return false
+	sap -= amount
+	EventBus.player_sap_changed.emit(sap)
+	return true
 
 
 func set_flag(key: String, value: Variant = true) -> void:
@@ -96,6 +113,7 @@ func to_dict() -> Dictionary:
 		"sap_drops": sap_drops,
 		"max_leaves": max_leaves,
 		"leaves": leaves,
+		"sap": sap,
 		"current_room": str(current_room),
 		"last_ocak": str(last_ocak),
 		"last_ocak_room": str(last_ocak_room),
@@ -114,6 +132,7 @@ func from_dict(data: Dictionary) -> void:
 	sap_drops = int(data.get("sap_drops", 0))
 	max_leaves = int(data.get("max_leaves", 5))
 	leaves = int(data.get("leaves", max_leaves))
+	sap = int(data.get("sap", 0))
 	current_room = StringName(data.get("current_room", ""))
 	last_ocak = StringName(data.get("last_ocak", ""))
 	last_ocak_room = StringName(data.get("last_ocak_room", ""))
@@ -161,6 +180,7 @@ func reset() -> void:
 	sap_drops = 0
 	max_leaves = 5
 	leaves = max_leaves
+	sap = 0
 	current_room = &""
 	last_ocak = &""
 	last_ocak_room = &""

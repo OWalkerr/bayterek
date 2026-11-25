@@ -9,6 +9,9 @@ signal vine_released(anchor: Node3D, perfect: bool)
 signal vine_broken(anchor: Node3D)
 signal climb_started(vine: Node3D)
 signal climb_ended(vine: Node3D, jumped: bool)
+signal grapple_attached(flower: Node3D)
+signal player_sap_changed(sap: int)
+signal player_heal_started
 signal player_damaged(amount: int, leaves_left: int)
 signal player_healed(leaves: int)
 signal player_died

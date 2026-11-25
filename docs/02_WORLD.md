@@ -58,16 +58,28 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 - **Yetenek:** Umay Tüyü (çift zıplama) — aslında oyunun ortasında gizli bir yoldan da alınabilir.
 - **Final:** Karakuş + Kalp.
 
-### Kök Dibi — mevcut greybox düzeni (M4)
+### Kök Dibi — greybox düzeni (M5, 13 oda)
 ```
- y=1   [Tırmanma ][ Yankı Mağarası ──── ]
- y=0   [ Kuyusu  ][Ocak][ Çürük Yuvası ][ Savrulma Zinciri ][ Çürük Geçit (2×2) ]
-        x=-1      x=0   x=1–2          x=3–4               x=5–6
+ y=2         [Gizli]                                              [Çiçek ][Eşik]
+ y=1   [Tırm.][ Yankı ──── ][ Üst Kökler ─── ]  [Çürük ][Sunak][Kanca B.][Spor M.][Kuyusu]
+ y=0   [Kuyu ][Ocak][ Yuva ][ Savrulma ]        [Geçit ]
+        x=-1   0     1-2    3-4                  5-6     7     8-9       10-11   12     13
 ```
-- **Ocak Odası** (merkez, Ocak "merkez", yeni oyun burada) → batı: Tırmanma Kuyusu (alt) · doğu: Çürük Yuvası.
-- **Tırmanma Kuyusu** (1×2) → üst kapı: Yankı Mağarası (batı girişi). Yankı Mağarası'nın arka koridoru çıkmaz; mağara köşesinde **Kut parçası** (sır).
-- **Çürük Yuvası → Savrulma Zinciri → Çürük Geçit**; Çürük Geçit'in sonunda ikinci Ocak ("gecit").
-- M5'te bu düzen gerçek Kök Dibi odalarıyla (12–15 oda) genişler; mevcut odalar eğitim bölümü olarak kalabilir.
+| Oda | Fikir | Bağlantılar |
+|---|---|---|
+| Ocak Odası | Merkez, Ocak "merkez", yeni oyun | B: Tırmanma (alt) · D: Yuva · **Tavan: Üst Kökler (kanca)** — çiçek en baştan görünür |
+| Tırmanma Kuyusu | Tırmanma + yana zıplama | Alt: Ocak Odası · Üst: Yankı Mağarası |
+| Yankı Mağarası | Derinlik modu, arka katman | Kut parçası #1 (mağara köşesi) |
+| Çürük Yuvası → Savrulma Zinciri → Çürük Geçit | Savaş, sallanma, çürük sarmaşık | Çürük Geçit sonunda Ocak "gecit" |
+| **Sunak Odası** | **Kamçı Kancası** kazanılır; hemen denenecek çiçek | Çürük Geçit ↔ Kanca Bahçesi |
+| **Kanca Bahçesi** | 22 m sarmaşıksız uçurum, yalnızca kanca çiçekleri | İki yön de kanca ister |
+| **Spor Mahzeni** | Sürüngen + 3 Şişkin; tavandaki çiçekle üstlerinden geç ya da dövüş | |
+| **Çiçek Kuyusu** | Tırmanma + kanca, 22.5 m dikey | Tepe kapısı kanca ister |
+| **Kökyiyen Eşiği** | Boss öncesi Ocak "esik" + mühürlü kök kapısı (M6) | |
+| **Üst Kökler** | **Derinlik sırrı:** koridor sonu yandan duvar; kamera derinliğe dönünce sahte duvar kaybolur, arkadaki geçit iner | Alt: Ocak Odası · Sır: Gizli Oda |
+| **Gizli Oda** | Kut parçası #2; haritada yalnızca bulununca görünür | |
+
+**Metroidvania döngüsü:** Ocak Odası'nın tavanındaki çiçek en baştan görünür ama ulaşılamaz → Sunak'ta kanca → geri dönünce tavan açılır (Üst Kökler + sır). Kapı gereksinimleri `RoomDoor.requires` ile veride; test_m5 yeteneksiz/yetenekli erişilebilirliği ve kancasız geçilemezliği botla doğrular.
 
 ## Yetenek Kapıları (Gating Matrisi)
 | Engel | Açan yetenek | İlk göründüğü bölge |

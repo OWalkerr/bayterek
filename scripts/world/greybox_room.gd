@@ -93,6 +93,30 @@ func backdrop(x1: float, x2: float, y1: float, y2: float, color: Color = C_ROOT)
 	box(Vector3((x1 + x2) * 0.5, (y1 + y2) * 0.5, -3.5), Vector3(x2 - x1, y2 - y1, 1.0), color)
 
 
+## Görsel ama çarpışmasız kutu: yandan bakınca duvar gibi görünür, derinlikte içinden geçilir
+## (derinlik sırrı, Sütun 4). Hafif farklı ton = dikkatli göze ipucu.
+func illusion_box(center: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color.lightened(0.04)
+	mat.roughness = 0.95
+	mesh.material = mat
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.position = center
+	mi.add_to_group(&"illusion_wall")
+	add_child(mi)
+	return mi
+
+
+func grapple_flower(at: Vector3) -> GrappleFlower:
+	var f := GrappleFlower.new()
+	f.position = at
+	add_child(f)
+	return f
+
+
 func vine(anchor_position: Vector3, length: float) -> VineAnchor:
 	var v := VineAnchor.new()
 	v.vine_length = length

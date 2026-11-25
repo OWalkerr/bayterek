@@ -34,6 +34,10 @@ const LIVE_FIELDS: Array = [
 	["pogo_velocity", 4.0, 16.0, 0.1],
 	["invuln_time", 0.0, 2.0, 0.05],
 	["hit_stop_time", 0.0, 0.2, 0.005],
+	["grapple_range", 3.0, 14.0, 0.1],
+	["grapple_rope_length", 2.0, 8.0, 0.1],
+	["grapple_reel_speed", 1.0, 20.0, 0.25],
+	["heal_time", 0.2, 3.0, 0.05],
 ]
 
 @export_group("Koşma")
@@ -129,6 +133,22 @@ const LIVE_FIELDS: Array = [
 @export var fall_damage: int = 1
 ## Dokunulmazlıkta yanıp sönme aralığı.
 @export var invuln_blink: float = 0.08
+
+@export_group("Kamçı Kancası")
+## docs/03: 8 m menzil. Kanca çiçeğine yapışınca ip bu uzunluğa çekilir (sarkaç başlar).
+@export var grapple_range: float = 8.0
+@export var grapple_rope_length: float = 4.5
+@export var grapple_reel_speed: float = 8.0
+## Hedef seçimi: girdi/bakış yönündeki çiçeğe öncelik (puan = mesafe − ağırlık × yön uyumu).
+@export var grapple_aim_weight: float = 3.0
+
+@export_group("Öz ve iyileşme")
+## Kamçı bir düşmana isabet ettikçe dolan Öz (GameState.SAP_MAX = 99).
+@export var sap_per_hit: int = 11
+## L basılı tut: heal_time sn sonra +1 yaprak, heal_cost Öz harcanır (docs/03: 1 sn).
+@export var heal_cost: int = 33
+@export var heal_time: float = 1.0
+@export var heal_decel: float = 40.0
 
 @export_group("Görsel")
 @export var turn_speed: float = 14.0

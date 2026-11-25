@@ -9,19 +9,23 @@ var axis: Vector3 = Vector3.RIGHT
 var angle: float = 0.0
 var omega: float = 0.0
 var rope_length: float = 3.0
+## Kamçı Kancası ile mi tutunuldu (ip hedef uzunluğa çekilir).
+var grappled: bool = false
 
 
 func can_attack() -> bool:
 	return true
 
 
-func begin(new_anchor: VineAnchor) -> void:
+func begin(new_anchor: VineAnchor, grapple: bool = false) -> void:
 	anchor = new_anchor
+	grappled = grapple
 	var t := tuning()
 	var p := player
 	var hand := p.get_hand_position()
 	var offset := hand - anchor.global_position
-	rope_length = clampf(offset.length(), t.min_rope, t.max_rope)
+	var max_rope := maxf(t.max_rope, t.grapple_range) if grapple else t.max_rope
+	rope_length = clampf(offset.length(), t.min_rope, max_rope)
 
 	if CameraDirector.is_side_mode():
 		axis = Vector3.RIGHT
@@ -67,6 +71,9 @@ func physics_update(delta: float) -> void:
 				t.min_rope, t.max_rope)
 	else:
 		push = p.input_to_world(input).dot(axis)
+	# Kanca: ip hedef uzunluğa çekilir (oyuncu çiçeğe doğru çekilir, salınım hızlanır)
+	if grappled and absf(input.y) < 0.5:
+		rope_length = move_toward(rope_length, t.grapple_rope_length, t.grapple_reel_speed * delta)
 
 	var alpha := -(t.swing_gravity / rope_length) * sin(angle)
 	alpha += push * t.swing_pump * cos(angle) / rope_length
@@ -130,6 +137,7 @@ func release(jumped: bool) -> void:
 	last_anchor = released
 	p.regrab_timer = t.regrab_cooldown
 	anchor = null
+	grappled = false
 	p.jump_held = false
 	p.coyote_timer = 0.0
 	p.change_state(Player.State.AIR)

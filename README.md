@@ -9,10 +9,10 @@ Kökler arasında büyümüş yetim **Alpay**, sarmaşık kamçısıyla Hayat A�
 - **Görünüm:** 3D dünya, yandan kamera; mağaralarda 3D derinlik kamerası
 - **Hedef:** PC / Steam · test için Web build
 
-## Şu an ne var? (M4 — dünya altyapısı)
+## Şu an ne var? (M5 — Kök Dibi greybox)
 **Oyna:** https://owalkerr.github.io/bayterek/ (tarayıcı, klavye)
 
-Menüden **Yeni Oyun** → Kök Dibi: Ocak Odası merkezli 6 oda, kapılarla bağlı; Ocak'ta (W) dinlen/kaydet, ölünce son Ocak'ta dirilirsin; **Devam** son kayıttan sürer; **Tab** harita. Yankı Mağarası'nda gizli bir Kut parçası var.
+Menüden **Yeni Oyun** → Kök Dibi: 13 oda. Doğuya ilerle, Sunak Odası'nda **Kamçı Kancası**'nı al (K / sağ tık), kanca çiçekleriyle Kanca Bahçesi ve Çiçek Kuyusu'nu aşıp Kökyiyen Eşiği'ne ulaş; sonra Ocak Odası'na dönüp tavandaki çiçekle Üst Kökler'e çık ve duvarın sırrını bul. Ocak'ta (W) dinlen/kaydet; **L** basılı = Öz'le iyileş; **Tab** harita; 2 Kut parçası.
 
 Geliştirici test odaları (0–5 tuşu, kayıt almaz):
 - **0 Kök Ağzı** — M0 prototipi: sallanma, mağarada 3D derinlik kamerası, yukarı zincir
@@ -42,4 +42,5 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn
+godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn
 ```

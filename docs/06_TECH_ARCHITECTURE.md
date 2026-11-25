@@ -70,7 +70,7 @@ Player (CharacterBody3D)  ── player.gd (bağlam: zamanlayıcılar, girdi, tu
 ├── CollisionShape3D       # Kapsül r=0.35 h=1.6 — katman "player" (2), maske "world" (1)
 └── WhipCombat (Node3D)    # player_combat.gd — kombo, yukarı/aşağı (pogo), Savrulma Saldırısı, hit-stop
 ```
-Durumlar: `GROUND`, `AIR`, `SWING`, `CLIMB`, `HURT`, `DEAD`, `CINEMATIC` (`WALL` M5+).
+Durumlar: `GROUND`, `AIR`, `SWING`, `CLIMB`, `HURT`, `DEAD`, `CINEMATIC`, `HEAL` (M5) (`WALL` sonra).
 
 **Durum makinesi (M2'de bölündü):** `scripts/player/states/*.gd`, taban `PlayerState` (RefCounted: `enter`, `exit`, `physics_update`, `can_attack`).
 | Durum nesnesi | Enum | Görev |
@@ -81,6 +81,8 @@ Durumlar: `GROUND`, `AIR`, `SWING`, `CLIMB`, `HURT`, `DEAD`, `CINEMATIC` (`WALL`
 | `PlayerHurtState` | HURT | Geri itilme |
 | `PlayerDeadState` | DEAD | Kontrol kilidi; kabuk odayı yeniden başlatır |
 | `PlayerCinematicState` | CINEMATIC | Kilit |
+| `PlayerHealState` | HEAL | L basılı iyileşme (M5) |
+Kamçı Kancası hedeflemesi `Player._update_grapple()` içinde (her kare hedef seçilir, `GrappleFlower.set_targeted`), tutunma `PlayerSwingState.begin(çiçek, grapple=true)`.
 Tek geçiş noktası `Player.change_state()`; aynı nesneye geçişte (GROUND↔AIR) `enter/exit` çağrılmaz.
 
 ## Düşman Mimarisi
@@ -95,9 +97,11 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 ## Oda (Room) Sistemi (M4 — uygulandı)
 - **Her oda ayrı `.tscn`** (`scenes/world/regions/<bölge>/rooms/<oda_id>.tscn`). Kök düğüm script'i odanın greybox script'i (`scripts/world/rooms/room_XX_*.gd`, `GreyboxRoom` → `Room`). Sahnede: `room_id`, `display_name`, `idea`, `region`, `map_cell`, `map_size`, `spawn_point`, (isteğe bağlı) `bounds` + kapı/Ocak/toplanabilir düğümleri. Geometri şimdilik kodda (`_build()`); M7'de modeller aynı .tscn'e eklenir (karar 2026-11-25).
 - `RoomRegistry` (`scripts/world/room_registry.gd`): oda kimliği → sahne yolu, `START_ROOM`, geliştirici oda listesi. **Yeni oda = .tscn + registry satırı.**
+- Oda sahneleri `tools/gen_rooms.py` tablosundan üretilir (kimlik, hücre, kapılar + `requires`, Ocak, toplanabilir, sunak). Elle düzenleme yerine tabloyu değiştir → `python3 tools/gen_rooms.py`.
 - Kapılar `RoomDoor` (Area3D, maske "player"): `door_id`, `target_room`, `target_door`, `arrive_offset` (bu kapıdan GİRİLİRKEN oyuncunun konacağı nokta, odanın içine doğru ≥ 1.5 m — kapı alanının dışında olmalı ki geri sekmesin). Kapı düğümü eşiğin alt ortasında; alan yukarı 3 m.
 - `SceneRouter` (autoload): kapı geçişi = karartma 0.25 sn → `ResourceLoader.load_threaded_request` ile arka planda yükleme (web'de tek iş parçacığında da çalışır) → `host.swap_room()` → oyuncu hedef kapıya **hızı korunarak** → `GameState.enter_room()` + otomatik kayıt → kamera sınırı/SIDE → aydınlanma. Ayrıca `enter_room_immediate()` (yeni oyun, devam, geliştirici seçici), `respawn_at_last_ocak()`, `rest_at_ocak()`. Host = `main.tscn` kabuğu (`greybox_level.gd`).
 - **Ocak** (`scripts/world/ocak.gd`): yanında yerdeyken W → dinlen: can dolar, son Ocak işaretlenir, tam kayıt, oda yeniden yüklenir (düşmanlar yeniden doğar). Ölümde son Ocak'ta tam canla dirilinir; hiç Ocak yoksa mevcut odanın başında.
+- Yeni dünya bileşenleri (M5): `GrappleFlower`, `AbilityShrine`, `GreyboxRoom.illusion_box()` (çarpışmasız sahte duvar), `RoomDoor.requires`.
 - Oda durumu kalıcılığı: `GameState.flags["oda_id/nesne_id"]` (`Room.flag_key()`); örnek `Collectible` (Kut parçası) bir kez alınır, bir daha doğmaz. Normal düşmanlar odaya her girişte yeniden doğar.
 - **Harita:** MetSys yerine kendi ızgaramız (karar 2026-11-25). `MapService` oda sahnelerini örneklemeden `SceneState`'ten okur (hücre, boyut, Ocak, kapılar). `MapScreen` (Tab / Select) yalnızca ziyaret edilen odaları, kapı bağlantılarını, bulunulan odayı ve Ocak'ları çizer; açıkken oyun duraklar.
 
@@ -127,6 +131,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `test_m1.tscn` | Coyote, jump buffer, tırmanma, çürük sarmaşık, mükemmel bırakma + **bot ile 3 odanın geçilmesi** |
   | `test_m3.tscn` | Arka uç, mod geçişi (konum/FOV), geçiş yavaşlaması, girdi sürekliliği, SideRail (arka koridor + Z=0'a 0.4 sn), oda sınırları, look-ahead, ölü bölge, düşüşte dikey odak, **bot ile mağara odası** |
   | `test_m4.tscn` | Harita verisi (karşılıklı kapılar, çakışmayan hücreler, erişilebilirlik), yeni oyun, kapı geçişi (hız + kayıt), **tüm kapıların fiziksel varışı**, Ocak, ölümde son Ocak, kalıcı toplanabilir, kayıt turu, Devam, harita ekranı |
+  | `test_m5.tscn` | Bölge verisi (13 oda, 2 Kut, yeteneksiz/yetenekli erişilebilirlik), kanca (yeteneksiz çalışmaz, hedef, ip), sunak, **botla**: Kanca Bahçesi, Ocak Odası tavanı, Çiçek Kuyusu (kancalı geçer / kancasız geçemez), derinlik sırrı → Gizli Oda; Öz + iyileşme |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.

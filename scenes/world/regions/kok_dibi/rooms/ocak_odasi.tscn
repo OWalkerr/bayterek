@@ -30,6 +30,16 @@ target_room = &"yuva"
 target_door = &"west"
 arrive_offset = Vector3(-1.8, 0.1, 0.0)
 
+[node name="DoorUp" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 14.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"up"
+target_room = &"ust_kokler"
+target_door = &"down"
+size = Vector3(10.0, 3.0, 4.0)
+arrive_offset = Vector3(0.0, -2.0, 0.0)
+requires = &"whip_grapple"
+
 [node name="Ocak" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.0, 0.0)
 script = ExtResource("3_ocak")

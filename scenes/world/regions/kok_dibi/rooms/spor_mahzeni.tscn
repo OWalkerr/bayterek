@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_13_spor_mahzeni.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+
+[node name="SporMahzeni" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"spor_mahzeni"
+display_name = "Spor Mahzeni"
+idea = "Kalabalığı kancayla aş ya da dövüş"
+region = &"kok_dibi"
+map_cell = Vector2i(10, 1)
+map_size = Vector2i(2, 1)
+spawn_point = Vector3(-6.0, 0.5, 0.0)
+
+[node name="DoorWest" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"west"
+target_room = &"kanca_bahcesi"
+target_door = &"east"
+arrive_offset = Vector3(1.5, 0.1, 0.0)
+
+[node name="DoorEast" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41.5, 0.0, 0.0)
+script = ExtResource("2_door")
+door_id = &"east"
+target_room = &"cicek_kuyusu"
+target_door = &"west_bottom"
+arrive_offset = Vector3(-1.5, 0.1, 0.0)

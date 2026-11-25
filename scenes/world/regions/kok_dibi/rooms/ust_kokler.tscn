@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/rooms/room_16_ust_kokler.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/world/room_door.gd" id="2_door"]
+
+[node name="UstKokler" type="Node3D"]
+script = ExtResource("1_room")
+room_id = &"ust_kokler"
+display_name = "Üst Kökler"
+idea = "Derinlik sırrı: duvarın ardı"
+region = &"kok_dibi"
+map_cell = Vector2i(2, 1)
+map_size = Vector2i(3, 1)
+spawn_point = Vector3(5.0, 0.5, 0.0)
+
+[node name="DoorDown" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, -2.6, 0.0)
+script = ExtResource("2_door")
+door_id = &"down"
+target_room = &"ocak_odasi"
+target_door = &"up"
+size = Vector3(4.0, 2.0, 4.0)
+arrive_offset = Vector3(3.5, 2.7, 0.0)
+
+[node name="DoorSecret" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35.0, 0.0, -14.5)
+script = ExtResource("2_door")
+door_id = &"secret"
+target_room = &"gizli_oda"
+target_door = &"back"
+size = Vector3(4.0, 3.0, 1.0)
+arrive_offset = Vector3(0.0, 0.1, 2.0)
