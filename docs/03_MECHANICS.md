@@ -1,0 +1,115 @@
+# Mekanikler
+
+> Tüm sayılar başlangıç değerleridir; `res://data/tuning/player_tuning.tres` üzerinden ayarlanır. Kod içine sabit sayı gömülmez.
+
+## 1. Temel Hareket (Yan Mod / 2.5D)
+Oyuncu `CharacterBody3D`; yan modda **Z ekseni 0'a kilitli**, hareket X (yatay) ve Y (dikey) ekseninde.
+
+| Parametre | Değer | Not |
+|---|---|---|
+| Koşma hızı | 7.0 m/s | |
+| Hızlanma / yavaşlama (yerde) | 60 / 70 m/s² | Çabuk tepki |
+| Havada kontrol | %65 | |
+| Zıplama yüksekliği | 2.2 m | Zıplama hızı yükseklikten hesaplanır |
+| Yerçekimi (yükselirken / düşerken) | 24 / 42 m/s² | Düşüş daha hızlı → tok his |
+| Değişken zıplama | Tuş bırakılınca dikey hız × 0.45 | |
+| Coyote time | 0.12 sn | Kenardan düştükten sonra zıplama hakkı |
+| Jump buffer | 0.12 sn | Yere değmeden basılan zıplama hatırlanır |
+| Maks. düşüş hızı | 22 m/s | |
+
+## 2. Sarmaşık Sistemi (oyunun kalbi)
+
+### 2.1 Sarmaşık türleri
+| Tür | Davranış |
+|---|---|
+| **Sallanma Sarmaşığı** (`VineAnchor`) | Sabit bir noktadan sarkan sarmaşık. Tutunulunca sarkaç fiziği. |
+| **Tırmanma Sarmaşığı** (`ClimbVine`) | Dikey sarmaşık; yukarı/aşağı tırmanma, yana zıplama. |
+| **Kanca Çiçeği** (`GrappleFlower`) | Kamçı Kancası ile uzaktan tutulur, sarkaç başlar. |
+| **Çürük Sarmaşık** | Tutunulunca 1.5 sn sonra kopar. |
+| **Diken Sarmaşık** | Tutunulursa hasar verir; ancak kamçıyla temizlenir. |
+| **Yetiştirilen Sarmaşık** | Tohum Atışı ile oyuncunun yarattığı geçici sallanma noktası. |
+
+### 2.2 Sallanma fiziği — "Sarkaç Kontrolcüsü"
+Fizik motoruna bırakılmaz; **kinematik sarkaç** kullanılır (tam kontrol, tutarlı his):
+
+```
+θ  : dikeye göre açı      ω : açısal hız      L : ip uzunluğu
+α  = -(g / L) · sin(θ) + pump · input_x / L - damping · ω
+ω += α · dt
+θ += ω · dt
+pozisyon = anchor + L · (sin θ, -cos θ)
+```
+
+| Parametre | Değer |
+|---|---|
+| Tutunma yarıçapı (otomatik yakalama) | 1.4 m |
+| İp uzunluğu | Tutunma anındaki mesafe (min 2, maks 7 m) |
+| Pompalama kuvveti (input ile) | 9 m/s² |
+| Sönümleme | 0.15 |
+| Maks. açı | 100° |
+| Bırakma: momentum | Teğet hız × 1.1 |
+| Bırakma: zıplama bonusu | +6 m/s yukarı |
+| Yeniden yakalama bekleme süresi | Aynı sarmaşık 0.35 sn, başka sarmaşık 0 sn |
+| Yukarı/aşağı ile ip kısaltma/uzatma | 3 m/s |
+
+**His kuralları:**
+- Tutunma anında oyuncunun mevcut hızı açısal hıza çevrilir → momentum kaybolmaz.
+- Bırakma tepe noktasına yakınsa "mükemmel bırakma" penceresi (±8°): ekstra %15 hız + küçük ışık efekti.
+- Sarmaşıktan sarmaşığa zincir geçişlerde kamera hafifçe uzaklaşır (hız hissi).
+
+## 3. Savaş — Sarmaşık Kamçısı "Çatal"
+| Hamle | Girdi | Etki |
+|---|---|---|
+| Kamçı vuruşu | Saldırı | 3'lü kombo; menzil 2.5 m; 1–1–2 hasar |
+| Yukarı / aşağı vuruş | Yön + Saldırı | Aşağı vuruş düşmana değerse **zıplatır** (pogo) |
+| Kamçı Kancası | Kanca tuşu | 8 m menzil; kanca çiçeğine yapışır veya küçük düşmanı sersemletir |
+| Öz Çekimi | Kanca (basılı tut) | Hafif düşman/nesneyi oyuncuya çeker; ağır nesneye oyuncuyu çeker |
+| Savrulma Saldırısı | Sallanırken Saldırı | Sallanma hızına göre artan hasar |
+| Kök Darbesi | Havada aşağı + Saldırı (basılı) | Yere çakılma, alan hasarı (sonradan) |
+
+- **Can sistemi:** Can "yaprak" olarak gösterilir; başlangıç 5 yaprak.
+- **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır.
+- **Hasar alma:** 0.8 sn dokunulmazlık, geri itilme.
+- **Hit-stop:** Vuruşta 50 ms, boss'a kritik vuruşta 100 ms; kamera titremesi küçük.
+
+## 4. Yetenek Ağacı (kazanılma sırası)
+| # | Yetenek | Fiil | Bölge |
+|---|---|---|---|
+| 0 | Koş / Zıpla / Tutun / Sallan / Kamçı | temel | Başlangıç |
+| 1 | **Kamçı Kancası** | uzaktan tutun | Kök Dibi |
+| 2 | **Öz Çekimi** | çek / çekil | Öz Damarları |
+| 3 | **Kabuk Pençesi** | duvara tutun, duvar zıplaması | Kabuk Duvarı |
+| 4 | **Yaprak Pelerin** | süzül, rüzgârla yüksel | Yuva Dalları |
+| 5 | **Tohum Atışı** | kendi sarmaşığını yetiştir | Taç |
+| 6 | **Kök Dalışı** | yumuşak köklerden geç (kısa ışınlanma) | Erlik (Perde 2) |
+| 7 | **Umay Tüyü** | çift zıplama | Gizli / Gök |
+| 8 | **Gök Kamçısı** | yıldırımlı kamçı, metal/kehribar kırar | Gök Katları |
+
+## 5. Derinlik Modu (3D kamera)
+Mağaraya girince veya özel tetikleyicide kamera karakterin arkasına döner:
+- Hareket **X-Z düzleminde serbest**, kameraya göre (ileri = kameradan uzağa).
+- Zıplama, kamçı ve sallanma aynı çalışır; sarkaç hesabı 3D'de anchor'a doğru düzlemde yapılır.
+- Tetik çıkışında karakter en yakın yan-mod rayına (Z=0 veya tanımlı ray) yumuşakça geri çekilir.
+- Derinlik modunda kullanılacak içerikler: mağara keşfi, gizli geçitler, boss arenaları, perspektif bulmacaları (yandan bakınca kapalı görünen yolların arkadan açık olması).
+
+## 6. Bulmaca Türleri
+1. **Özsu akışı:** Kapak ve vanalarla özsu yönlendirme → platform yükselir, kehribar erir.
+2. **Işık-mantar:** Kamçıyla vurulan mantarlar geçici ışık verir; bazı platformlar sadece ışıkta görünür.
+3. **Ağırlık sarmaşıkları:** Bir sarmaşıkta asılı kalınca karşı taraftaki kapı açılır.
+4. **Büyüme zamanlaması:** Tohumla yetişen sarmaşık 6 sn yaşar; sırayla dikilerek yol kurulur.
+5. **Derinlik bulmacası:** Yan görünümde kapalı yol, 3D modda arkadan dolaşılarak açılır.
+6. **Düşman kullanma:** Öz Çekimi ile şişkin spor düşmanını çekip patlatarak kapı kırmak.
+
+## 7. Kontroller
+| Eylem | Gamepad | Klavye |
+|---|---|---|
+| Hareket | Sol çubuk | A/D (derinlikte W/S de) |
+| Zıpla | A / Çarpı | Space |
+| Saldırı (kamçı) | X / Kare | J / Sol tık |
+| Kanca / Öz Çekimi | RT | K / Sağ tık |
+| Tutun / Bırak | LT (veya otomatik) | Shift |
+| İyileş | B / Daire (basılı) | L |
+| Harita | Select | Tab |
+| Duraklat | Start | Esc |
+
+**Otomatik tutunma** varsayılan açık: havadayken tutunma yarıçapındaki sarmaşık otomatik yakalanır; bırakmak için zıpla. Ayarlardan "manuel tutunma"ya geçilebilir.
