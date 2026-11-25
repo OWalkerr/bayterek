@@ -29,6 +29,14 @@ window/stretch/mode="canvas_items"
 
 locale/fallback="tr"
 
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemy"
+3d_physics/layer_4="hurtbox"
+3d_physics/layer_5="hazard"
+
 [physics]
 
 common/physics_ticks_per_second=60

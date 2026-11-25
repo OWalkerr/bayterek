@@ -28,7 +28,7 @@ func setup(target: Player, room_names: PackedStringArray) -> void:
 	layer = 10
 
 	_info = UiStyle.label("", UiStyle.FONT_SIZE_SMALL)
-	_info.position = Vector2(24.0, 16.0)
+	_info.position = Vector2(24.0, 64.0)
 	add_child(_info)
 
 	_room_title = UiStyle.label("", UiStyle.FONT_SIZE, UiStyle.SAP_GOLD)
@@ -93,7 +93,7 @@ func on_goal(best: float) -> void:
 	var text := "Hedef! %.2f sn" % room_time
 	if best > 0.0:
 		text += "   (en iyi %.2f)" % best
-	flash_message(text + "\nR: tekrar · 0–3: oda seç", 5.0)
+	flash_message(text + "\nR: tekrar · 0–4: oda seç", 5.0)
 
 
 func flash_message(text: String, duration: float = MESSAGE_TIME) -> void:
@@ -111,8 +111,8 @@ func _build_room_menu() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override(&"separation", 8)
 	_room_menu.add_child(box)
-	box.add_child(UiStyle.label("BAYTEREK — M1 Hareket Odaları", 30, UiStyle.SAP_GOLD))
-	box.add_child(UiStyle.label("Tuşla (0–3) veya tıklayarak seç. Hareket edince menü kapanır.",
+	box.add_child(UiStyle.label("BAYTEREK — Greybox Test Odaları", 30, UiStyle.SAP_GOLD))
+	box.add_child(UiStyle.label("Tuşla (0–4) veya tıklayarak seç. Hareket edince menü kapanır.",
 			UiStyle.FONT_SIZE_SMALL))
 	for i in _room_names.size():
 		var b := UiStyle.button("%d · %s" % [i, _room_names[i]])
@@ -120,6 +120,7 @@ func _build_room_menu() -> void:
 		box.add_child(b)
 	box.add_child(UiStyle.label(
 			"A/D hareket · Space zıpla/bırak · W/S ip kısalt-uzat, tırman\n" \
+			+ "J / sol tık kamçı (W+J yukarı, havada S+J aşağı = pogo)\n" \
 			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning",
 			UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM))
 	add_child(_room_menu)
@@ -156,6 +157,9 @@ func _info_text() -> String:
 	lines.append("Konum: (%.1f, %.1f, %.1f)   coyote %.2f  buffer %.2f" % [
 			player.global_position.x, player.global_position.y, player.global_position.z,
 			player.get_coyote_timer(), player.get_jump_buffer_timer()])
+	var combat := player.combat
+	lines.append("Can: %d/%d   Kombo: %d   Saldırı: %s" % [GameState.leaves, GameState.max_leaves,
+			combat.combo_index + 1, PlayerCombat.KIND_NAMES[combat.kind] if combat.is_attacking() else "-"])
 	if player.is_swinging():
 		var window := "  ★ MÜKEMMEL PENCERE" if player.is_in_perfect_window() else ""
 		lines.append("Sarkaç: θ %.0f°  ω %.2f rad/sn  L %.2f m%s" % [

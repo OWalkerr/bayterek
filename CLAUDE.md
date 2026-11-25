@@ -30,6 +30,7 @@ godot --headless --path . --import                              # .godot/ + sın
 godot --headless --fixed-fps 60 --path . res://tests/validate_scripts.tscn   # tüm scriptler derleniyor mu
 godot --headless --fixed-fps 60 --path . res://tests/test_movement.tscn      # M0 duman testi
 godot --headless --fixed-fps 60 --path . res://tests/test_m1.tscn            # M1 hareket + bot oda geçişi
+godot --headless --fixed-fps 60 --path . res://tests/test_m2.tscn            # M2 savaş + can + bot savaş odası
 
 # Web export şablonları (oturum başına bir kez, ~80 MB; yalnızca web dosyaları çıkarılır)
 mkdir -p /tmp/tpl && cd /tmp/tpl && curl -sSL -o t.tpz https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_export_templates.tpz \

@@ -28,6 +28,12 @@ const LIVE_FIELDS: Array = [
 	["climb_speed", 1.0, 8.0, 0.1],
 	["climb_jump_speed_x", 0.0, 12.0, 0.1],
 	["climb_jump_height", 0.5, 4.0, 0.05],
+	["whip_range", 1.0, 5.0, 0.05],
+	["attack_duration", 0.1, 0.6, 0.01],
+	["combo_window", 0.0, 0.8, 0.01],
+	["pogo_velocity", 4.0, 16.0, 0.1],
+	["invuln_time", 0.0, 2.0, 0.05],
+	["hit_stop_time", 0.0, 0.2, 0.005],
 ]
 
 @export_group("Koşma")
@@ -82,6 +88,45 @@ const LIVE_FIELDS: Array = [
 @export var climb_jump_lock: float = 0.15
 ## Tırmanma sarmaşığına ilk tutunmada aşağı kayma hızı sönümlenir; bu süre içinde yeniden tutunulamaz.
 @export var climb_regrab_cooldown: float = 0.25
+
+@export_group("Kamçı")
+## İleri vuruş menzili (docs/03 §3: 2.5 m) ve isabet kutusunun yüksekliği/kalınlığı.
+@export var whip_range: float = 2.5
+@export var whip_thickness: float = 1.2
+## Bir vuruşun toplam süresi; isabet yalnızca [active_start, active_end] aralığında.
+@export var attack_duration: float = 0.26
+@export var attack_active_start: float = 0.05
+@export var attack_active_end: float = 0.16
+## Vuruş bittikten sonra komboyu sürdürmek için süre.
+@export var combo_window: float = 0.3
+## Erken basılan saldırı hatırlanır (attack buffer).
+@export var attack_buffer: float = 0.15
+## 3'lü kombonun hasarları (docs/03: 1–1–2).
+@export var combo_damage: Array[int] = [1, 1, 2]
+## 3. vuruştan sonra yeni kombo için bekleme.
+@export var combo_end_cooldown: float = 0.3
+## Aşağı vuruş isabet ederse yukarı sıçrama hızı (pogo).
+@export var pogo_velocity: float = 10.0
+## Savrulma Saldırısı: sallanırken saldırı; çevresel yarıçap ve hızlı/yavaş hasar.
+@export var swing_attack_radius: float = 2.0
+@export var swing_attack_fast_speed: float = 8.0
+@export var swing_attack_damage_slow: int = 1
+@export var swing_attack_damage_fast: int = 2
+## Düşmanı geri itme hızı.
+@export var enemy_knockback: float = 5.0
+## Vuruşta zaman yavaşlaması (hit-stop): süre (gerçek zaman) ve zaman ölçeği.
+@export var hit_stop_time: float = 0.05
+@export var hit_stop_scale: float = 0.05
+
+@export_group("Can")
+## Hasar sonrası dokunulmazlık (docs/03: 0.8 sn) ve kontrolsüz geri itilme süresi.
+@export var invuln_time: float = 0.8
+@export var hurt_stun_time: float = 0.25
+@export var hurt_knockback: Vector2 = Vector2(6.0, 5.0)
+## Çukura düşünce kaybedilen yaprak (karar 2026-11-25).
+@export var fall_damage: int = 1
+## Dokunulmazlıkta yanıp sönme aralığı.
+@export var invuln_blink: float = 0.08
 
 @export_group("Görsel")
 @export var turn_speed: float = 14.0

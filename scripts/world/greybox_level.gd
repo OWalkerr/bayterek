@@ -9,16 +9,21 @@ const ROOM_SCRIPTS: Array[Script] = [
 	preload("res://scripts/world/rooms/room_01_savrulma.gd"),
 	preload("res://scripts/world/rooms/room_02_tirmanma.gd"),
 	preload("res://scripts/world/rooms/room_03_curuk.gd"),
+	preload("res://scripts/world/rooms/room_04_yuva.gd"),
 ]
-const ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit"]
+const ROOM_NAMES: PackedStringArray = ["Kök Ağzı", "Savrulma Zinciri", "Tırmanma Kuyusu", "Çürük Geçit", "Çürük Yuvası"]
 ## Başlangıç odası (M0 testleri Kök Ağzı koordinatlarını kullanır).
 @export var start_room: int = 0
+## Can bitince oda yeniden başlamadan önce bekleme (karar 2026-11-25: oda başı + tam can).
+@export var death_restart_delay: float = 1.2
 
 var player: Player
 var rig: CameraRig
 var hud: DebugHud
 var room: GreyboxRoom
 var room_index: int = -1
+var game_hud: GameHud
+var _death_timer: float = -1.0
 
 
 func _ready() -> void:
@@ -29,12 +34,19 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(player, ROOM_NAMES)
 	hud.room_requested.connect(load_room)
+	game_hud = GameHud.new()
+	add_child(game_hud)
 	EventBus.vine_released.connect(_on_vine_released)
+	EventBus.player_died.connect(_on_player_died)
 	load_room(start_room)
 	hud.show_room_menu(true)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	if _death_timer >= 0.0:
+		_death_timer -= delta
+		if _death_timer < 0.0:
+			load_room(room_index)
 	var moving := player.velocity.length() > 0.5 and player.is_on_floor()
 	if moving:
 		hud.start_room_timer()
@@ -54,6 +66,8 @@ func load_room(index: int) -> void:
 	room_index = index
 	add_child(room)
 	room.goal_reached.connect(_on_goal_reached)
+	_death_timer = -1.0
+	GameState.reset_health()
 	player.place_at(room.spawn_point)
 	CameraDirector.reset_to_side()
 	hud.show_room_menu(false)
@@ -70,6 +84,11 @@ func _on_goal_reached() -> void:
 		GameState.set_flag(key, best)
 	hud.on_goal(best)
 	EventBus.room_goal_reached.emit(room.room_id, hud.room_time)
+
+
+func _on_player_died() -> void:
+	hud.flash_message("Alpay düştü…", death_restart_delay)
+	_death_timer = death_restart_delay
 
 
 func _on_vine_released(_anchor: Node3D, perfect: bool) -> void:

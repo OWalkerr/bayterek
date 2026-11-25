@@ -1,51 +1,64 @@
 class_name Player
 extends CharacterBody3D
-## Alpay — oyuncu kontrolcüsü.
+## Alpay — oyuncu kontrolcüsü (bağlam). Durum davranışları `scripts/player/states/*.gd` içinde;
+## bu dosya ortak veriyi (zamanlayıcılar, ray, güvenli nokta), girdi yardımcılarını,
+## tutunma seçimini ve can/hasar akışını tutar.
 ## Yan modda (2.5D) Z ekseni raya kilitlidir; derinlik modunda X-Z serbesttir.
-## Sallanma fizik motoruna değil, kinematik sarkaç hesabına dayanır (docs/03_MECHANICS.md §2.2).
 
-enum State { GROUND, AIR, SWING, CLIMB, CINEMATIC }
+enum State { GROUND, AIR, SWING, CLIMB, HURT, DEAD, CINEMATIC }
 
 const HAND_HEIGHT: float = 1.45
-## Tırmanırken elin sarmaşık uçlarına ne kadar yaklaşabileceği.
-const CLIMB_END_MARGIN: float = 0.15
+const CLIMB_END_MARGIN: float = PlayerClimbState.END_MARGIN
+## Gövdenin orta yüksekliği (hasar/isabet merkezi).
+const BODY_CENTER: float = 0.8
 
 @export var tuning: PlayerTuning
 
-var state: State = State.AIR:
-	set(value):
-		if value == state:
-			return
-		state = value
-		EventBus.player_state_changed.emit(value)
-
+var state: State = State.AIR
 var rail_z: float = 0.0
 ## Son bırakmanın mükemmel olup olmadığı (debug HUD + testler için).
 var last_release_perfect: bool = false
+## Bakış yönü (dünya, yatay birim vektör) — kamçı ileri vuruşu bunu kullanır.
+var facing: Vector3 = Vector3.RIGHT
 
-var _coyote_timer: float = 0.0
-var _jump_buffer_timer: float = 0.0
-var _jump_held: bool = false
-var _input_lock_timer: float = 0.0
+# Durumların paylaştığı zamanlayıcılar
+var coyote_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
+var jump_held: bool = false
+var input_lock_timer: float = 0.0
+var regrab_timer: float = 0.0
+var climb_regrab_timer: float = 0.0
+var invuln_timer: float = 0.0
 
-# Sallanma durumu
-var _anchor: VineAnchor = null
-var _last_anchor: VineAnchor = null
-var _regrab_timer: float = 0.0
-var _swing_axis: Vector3 = Vector3.RIGHT
-var _swing_angle: float = 0.0
-var _swing_omega: float = 0.0
-var _rope_length: float = 3.0
+var move_state: PlayerMoveState
+var swing_state: PlayerSwingState
+var climb_state: PlayerClimbState
+var hurt_state: PlayerHurtState
+var dead_state: PlayerDeadState
+var cinematic_state: PlayerCinematicState
 
-# Tırmanma durumu
-var _climb_vine: ClimbVine = null
-var _last_climb_vine: ClimbVine = null
-var _climb_regrab_timer: float = 0.0
-
+var _states: Dictionary = {}       # State -> PlayerState
 var _last_safe_position: Vector3 = Vector3.ZERO
 var _facing_yaw: float = PI * 0.5
+var _blink_timer: float = 0.0
 
 @onready var _visual: Node3D = $Visual
+@onready var combat: PlayerCombat = $WhipCombat
+
+
+func _init() -> void:
+	move_state = PlayerMoveState.new(self)
+	swing_state = PlayerSwingState.new(self)
+	climb_state = PlayerClimbState.new(self)
+	hurt_state = PlayerHurtState.new(self)
+	dead_state = PlayerDeadState.new(self)
+	cinematic_state = PlayerCinematicState.new(self)
+	_states = {
+		State.GROUND: move_state, State.AIR: move_state,
+		State.SWING: swing_state, State.CLIMB: climb_state,
+		State.HURT: hurt_state, State.DEAD: dead_state,
+		State.CINEMATIC: cinematic_state,
+	}
 
 
 func _ready() -> void:
@@ -57,18 +70,31 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if delta <= 0.0:
+		return
 	_update_timers(delta)
-	match state:
-		State.GROUND, State.AIR:
-			_process_platforming(delta)
-		State.SWING:
-			_process_swing(delta)
-		State.CLIMB:
-			_process_climb(delta)
-		State.CINEMATIC:
-			velocity = Vector3.ZERO
+	(_states[state] as PlayerState).physics_update(delta)
 	_update_visual(delta)
 	_check_fall_out()
+
+
+## Tek durum değişim noktası. Aynı durum nesnesine geçişte (GROUND↔AIR) enter/exit çağrılmaz.
+func change_state(new_state: State) -> void:
+	if new_state == state:
+		return
+	var old_state := state
+	var old_obj: PlayerState = _states[old_state]
+	var new_obj: PlayerState = _states[new_state]
+	if old_obj != new_obj:
+		old_obj.exit(new_state)
+	state = new_state
+	if old_obj != new_obj:
+		new_obj.enter(old_state)
+	EventBus.player_state_changed.emit(new_state)
+
+
+func get_state_object() -> PlayerState:
+	return _states[state]
 
 
 # ---------------------------------------------------------------- Genel API
@@ -81,46 +107,74 @@ func is_climbing() -> bool:
 	return state == State.CLIMB
 
 
+func is_dead() -> bool:
+	return state == State.DEAD
+
+
+func is_invulnerable() -> bool:
+	return invuln_timer > 0.0
+
+
+func can_attack() -> bool:
+	return get_state_object().can_attack()
+
+
 func get_current_anchor() -> VineAnchor:
-	return _anchor
+	return swing_state.anchor if state == State.SWING else null
 
 
 func get_current_climb_vine() -> ClimbVine:
-	return _climb_vine
+	return climb_state.vine if state == State.CLIMB else null
 
 
 ## Dikeye göre sarkaç açısı (radyan); sallanmıyorsa 0.
 func get_swing_angle() -> float:
-	return _swing_angle if state == State.SWING else 0.0
+	return swing_state.angle if state == State.SWING else 0.0
 
 
 ## Açısal hız (rad/sn); sallanmıyorsa 0.
 func get_swing_omega() -> float:
-	return _swing_omega if state == State.SWING else 0.0
+	return swing_state.omega if state == State.SWING else 0.0
 
 
 func get_rope_length() -> float:
-	return _rope_length
+	return swing_state.rope_length
+
+
+func is_in_perfect_window() -> bool:
+	return state == State.SWING and swing_state.is_in_perfect_window()
 
 
 func get_coyote_timer() -> float:
-	return _coyote_timer
+	return coyote_timer
 
 
 func get_jump_buffer_timer() -> float:
-	return _jump_buffer_timer
+	return jump_buffer_timer
 
 
 func get_last_safe_position() -> Vector3:
 	return _last_safe_position
 
 
+func get_hand_position() -> Vector3:
+	return global_position + Vector3.UP * HAND_HEIGHT
+
+
+func get_body_center() -> Vector3:
+	return global_position + Vector3.UP * BODY_CENTER
+
+
+func mark_safe_position() -> void:
+	_last_safe_position = global_position
+
+
 func set_cinematic(enabled: bool) -> void:
 	if enabled:
 		_detach_all()
-		state = State.CINEMATIC
+		change_state(State.CINEMATIC)
 	else:
-		state = State.AIR
+		change_state(State.AIR)
 
 
 func respawn(at: Vector3) -> void:
@@ -128,45 +182,89 @@ func respawn(at: Vector3) -> void:
 	global_position = at
 	velocity = Vector3.ZERO
 	reset_physics_interpolation()
-	state = State.AIR
+	change_state(State.AIR)
 	EventBus.player_respawned.emit(at)
 
 
-## Oda değişiminde: konumu ve güvenli noktayı sıfırlar.
+## Oda değişiminde: konumu, güvenli noktayı ve dokunulmazlığı sıfırlar.
 func place_at(at: Vector3) -> void:
 	respawn(at)
 	_last_safe_position = at
 	rail_z = at.z
-	_last_anchor = null
-	_last_climb_vine = null
+	swing_state.last_anchor = null
+	climb_state.last_vine = null
+	invuln_timer = 0.0
+	_visual.visible = true
+
+
+func apply_gravity(delta: float) -> void:
+	var g := tuning.gravity_up if velocity.y > 0.0 else tuning.gravity_down
+	velocity.y = maxf(velocity.y - g * delta, -tuning.max_fall_speed)
+
+
+## Pogo / yukarı itme: dikey hızı ayarlar, değişken zıplama kesmesini devre dışı bırakır.
+func bounce(vertical_speed: float) -> void:
+	if state == State.SWING or state == State.CLIMB:
+		return
+	velocity.y = vertical_speed
+	jump_held = false
+	coyote_timer = 0.0
+	change_state(State.AIR)
 
 
 func _detach_all() -> void:
 	if state == State.SWING:
-		_release_swing(false)
+		swing_state.release(false)
 	elif state == State.CLIMB:
-		_release_climb(Vector3.ZERO, false)
+		climb_state.release(Vector3.ZERO, false)
 
 
-# ---------------------------------------------------------------- Zamanlayıcılar
+# ---------------------------------------------------------------- Can / hasar
+
+## Hasar uygular. `source` hasar kaynağının konumu (geri itme yönü), `knockback` false ise
+## (ör. çukura düşüş) itilmez. Dokunulmazlıkta, ölüyken veya sinematikte etkisizdir.
+func take_damage(amount: int, source: Vector3, knockback: bool = true) -> bool:
+	if amount <= 0 or is_invulnerable() or state == State.DEAD or state == State.CINEMATIC:
+		return false
+	GameState.leaves = maxi(GameState.leaves - amount, 0)
+	invuln_timer = tuning.invuln_time
+	EventBus.player_damaged.emit(amount, GameState.leaves)
+	_detach_all()
+	if GameState.leaves <= 0:
+		change_state(State.DEAD)
+		EventBus.player_died.emit()
+		return true
+	if knockback:
+		var away := global_position - source
+		var dir_x := signf(away.x) if absf(away.x) > 0.01 else -facing.x
+		if dir_x == 0.0:
+			dir_x = -1.0
+		hurt_state.begin(Vector3(dir_x * tuning.hurt_knockback.x, tuning.hurt_knockback.y, 0.0))
+	return true
+
+
+# ---------------------------------------------------------------- Zamanlayıcılar / girdi
 
 func _update_timers(delta: float) -> void:
-	_coyote_timer = maxf(_coyote_timer - delta, 0.0)
-	_jump_buffer_timer = maxf(_jump_buffer_timer - delta, 0.0)
-	_regrab_timer = maxf(_regrab_timer - delta, 0.0)
-	_climb_regrab_timer = maxf(_climb_regrab_timer - delta, 0.0)
-	_input_lock_timer = maxf(_input_lock_timer - delta, 0.0)
-	if Input.is_action_just_pressed(&"jump"):
-		_jump_buffer_timer = tuning.jump_buffer
+	coyote_timer = maxf(coyote_timer - delta, 0.0)
+	jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
+	regrab_timer = maxf(regrab_timer - delta, 0.0)
+	climb_regrab_timer = maxf(climb_regrab_timer - delta, 0.0)
+	input_lock_timer = maxf(input_lock_timer - delta, 0.0)
+	invuln_timer = maxf(invuln_timer - delta, 0.0)
+	if Input.is_action_just_pressed(&"jump") and state != State.DEAD:
+		jump_buffer_timer = tuning.jump_buffer
 
 
-func _get_move_input() -> Vector2:
+func get_move_input() -> Vector2:
 	# x: sağ(+) / sol(-), y: yukarı/ileri(+) / aşağı/geri(-)
+	if state == State.DEAD or state == State.CINEMATIC:
+		return Vector2.ZERO
 	return Input.get_vector(&"move_left", &"move_right", &"move_down", &"move_up")
 
 
 ## Girdiyi dünya uzayında yatay bir vektöre çevirir.
-func _input_to_world(input: Vector2) -> Vector3:
+func input_to_world(input: Vector2) -> Vector3:
 	if CameraDirector.is_side_mode():
 		return Vector3(input.x, 0.0, 0.0)
 	var cam_basis: Basis = CameraDirector.get_input_basis()
@@ -176,82 +274,12 @@ func _input_to_world(input: Vector2) -> Vector3:
 	return dir.limit_length(1.0)
 
 
-# ---------------------------------------------------------------- Yer / hava
-
-func _process_platforming(delta: float) -> void:
-	var input := _get_move_input()
-	var on_floor := is_on_floor()
-
-	if on_floor:
-		_coyote_timer = tuning.coyote_time
-		state = State.GROUND
-	else:
-		state = State.AIR
-
-	# Yatay hız (tırmanmadan yana zıplamadan hemen sonra kısa süre girdi kilitli)
-	if _input_lock_timer <= 0.0:
-		var desired := _input_to_world(input) * tuning.run_speed
-		var horizontal := Vector3(velocity.x, 0.0, velocity.z)
-		var rate: float
-		if desired.length_squared() > 0.0001:
-			rate = tuning.ground_accel
-		else:
-			rate = tuning.ground_decel
-		if not on_floor:
-			rate *= tuning.air_control
-		# Momentum koruma: havada koşu hızının üstündeyken ve girdi aynı yöndeyse
-		# hız koşu hızına kırpılmaz, yalnızca hafif sürtünmeyle azalır (Sütun 1).
-		var overspeed := not on_floor and horizontal.length() > tuning.run_speed \
-				and desired.length_squared() > 0.0001 and horizontal.dot(desired) > 0.0
-		if overspeed:
-			horizontal = horizontal.move_toward(
-					horizontal.normalized() * tuning.run_speed, tuning.air_overspeed_drag * delta)
-		else:
-			horizontal = horizontal.move_toward(desired, rate * delta)
-		velocity.x = horizontal.x
-		velocity.z = horizontal.z
-
-	# Yan modda raya çekilme (derinlikten çıkışta yumuşak dönüş de buradan gelir)
-	if CameraDirector.is_side_mode():
-		velocity.z = (rail_z - global_position.z) * tuning.rail_pull
-
-	# Zıplama (coyote time + jump buffer)
-	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-		velocity.y = tuning.get_jump_velocity()
-		_jump_buffer_timer = 0.0
-		_coyote_timer = 0.0
-		_jump_held = true
-		on_floor = false
-
-	# Asimetrik yerçekimi
-	if not on_floor:
-		var g := tuning.gravity_up if velocity.y > 0.0 else tuning.gravity_down
-		velocity.y = maxf(velocity.y - g * delta, -tuning.max_fall_speed)
-
-	# Değişken zıplama: tuş erken bırakılırsa yükseliş kesilir
-	if _jump_held and not Input.is_action_pressed(&"jump"):
-		_jump_held = false
-		if velocity.y > 0.0:
-			velocity.y *= tuning.jump_cut
-	if velocity.y <= 0.0:
-		_jump_held = false
-
-	move_and_slide()
-
-	# Güvenli nokta yalnızca gerçek bir hareket sonrası zemindeyken güncellenir
-	# (ışınlanma sonrası bayat is_on_floor değerine güvenilmez).
-	if is_on_floor() and global_position.y > tuning.kill_y + 2.0:
-		_last_safe_position = global_position
-	else:
-		_try_grab()
-
-
 # ---------------------------------------------------------------- Tutunma seçimi
 
-func _try_grab() -> void:
+func try_grab() -> void:
 	if not tuning.auto_grab and not Input.is_action_pressed(&"grab"):
 		return
-	var hand := global_position + Vector3.UP * HAND_HEIGHT
+	var hand := get_hand_position()
 
 	var best_swing: VineAnchor = null
 	var best_swing_d := tuning.grab_radius
@@ -259,7 +287,7 @@ func _try_grab() -> void:
 		var anchor := node as VineAnchor
 		if anchor == null or not anchor.enabled:
 			continue
-		if anchor == _last_anchor and _regrab_timer > 0.0:
+		if anchor == swing_state.last_anchor and regrab_timer > 0.0:
 			continue
 		# Tutturma noktasının üstünden/yanından tutunma sarkaçta momentumu sıfırlar → izin yok
 		if hand.y > anchor.global_position.y - tuning.grab_min_below_anchor:
@@ -275,7 +303,7 @@ func _try_grab() -> void:
 		var vine := node as ClimbVine
 		if vine == null or not vine.enabled:
 			continue
-		if vine == _last_climb_vine and _climb_regrab_timer > 0.0:
+		if vine == climb_state.last_vine and climb_regrab_timer > 0.0:
 			continue
 		var d := vine.distance_to_vine(hand)
 		if d < best_climb_d:
@@ -283,193 +311,9 @@ func _try_grab() -> void:
 			best_climb = vine
 
 	if best_climb != null and (best_swing == null or best_climb_d <= best_swing_d):
-		_start_climb(best_climb)
+		climb_state.begin(best_climb)
 	elif best_swing != null:
-		_start_swing(best_swing)
-
-
-# ---------------------------------------------------------------- Sallanma
-
-func _start_swing(anchor: VineAnchor) -> void:
-	_anchor = anchor
-	var hand := global_position + Vector3.UP * HAND_HEIGHT
-	var offset := hand - anchor.global_position
-	_rope_length = clampf(offset.length(), tuning.min_rope, tuning.max_rope)
-
-	if CameraDirector.is_side_mode():
-		_swing_axis = Vector3.RIGHT
-	else:
-		var flat := Vector3(offset.x, 0.0, offset.z)
-		if flat.length() < 0.1:
-			flat = Vector3(velocity.x, 0.0, velocity.z)
-		if flat.length() < 0.1:
-			flat = Vector3.RIGHT
-		_swing_axis = flat.normalized()
-
-	_swing_angle = atan2(offset.dot(_swing_axis), -offset.y)
-	# Momentum korunur: mevcut hız, sarkacın teğetine izdüşürülüp açısal hıza çevrilir.
-	_swing_omega = velocity.dot(_swing_tangent()) / _rope_length
-	_jump_buffer_timer = 0.0
-	state = State.SWING
-	anchor.set_grabbed(true)
-	EventBus.vine_grabbed.emit(anchor)
-
-
-func _swing_tangent() -> Vector3:
-	return _swing_axis * cos(_swing_angle) + Vector3.UP * sin(_swing_angle)
-
-
-func _process_swing(delta: float) -> void:
-	if not is_instance_valid(_anchor) or not _anchor.enabled:
-		_release_swing(false)
-		return
-
-	var input := _get_move_input()
-	var push: float
-	if CameraDirector.is_side_mode():
-		push = input.x
-		# Yukarı/aşağı ile ip kısalt/uzat
-		_rope_length = clampf(_rope_length - input.y * tuning.rope_reel_speed * delta,
-				tuning.min_rope, tuning.max_rope)
-	else:
-		push = _input_to_world(input).dot(_swing_axis)
-
-	var alpha := -(tuning.swing_gravity / _rope_length) * sin(_swing_angle)
-	alpha += push * tuning.swing_pump * cos(_swing_angle) / _rope_length
-	alpha -= tuning.swing_damping * _swing_omega
-	_swing_omega += alpha * delta
-
-	var max_angle := deg_to_rad(tuning.swing_max_angle_deg)
-	_swing_angle += _swing_omega * delta
-	if absf(_swing_angle) > max_angle:
-		_swing_angle = clampf(_swing_angle, -max_angle, max_angle)
-		_swing_omega = 0.0
-
-	var hand_target := _anchor.global_position \
-			+ (_swing_axis * sin(_swing_angle) - Vector3.UP * cos(_swing_angle)) * _rope_length
-	var body_target := hand_target - Vector3.UP * HAND_HEIGHT
-	velocity = (body_target - global_position) / delta
-	move_and_slide()
-
-	if get_slide_collision_count() > 0:
-		# Duvara/zemine çarptı: sekme + açıyı gerçek konuma göre düzelt
-		_swing_omega *= tuning.swing_bounce
-		var real_offset := global_position + Vector3.UP * HAND_HEIGHT - _anchor.global_position
-		_swing_angle = atan2(real_offset.dot(_swing_axis), -real_offset.y)
-		if is_on_floor():
-			_release_swing(false)
-			return
-
-	_anchor.update_vine_visual(global_position + Vector3.UP * HAND_HEIGHT)
-
-	if _jump_buffer_timer > 0.0:
-		_jump_buffer_timer = 0.0
-		_release_swing(true)
-	elif not tuning.auto_grab and not Input.is_action_pressed(&"grab"):
-		_release_swing(false)
-
-
-## Salınımın ileri-yukarı kolunda (açı ile açısal hız aynı işaretli) ve
-## tuning'deki açı aralığındaysa "mükemmel bırakma" sayılır.
-func is_in_perfect_window() -> bool:
-	if state != State.SWING:
-		return false
-	var angle_deg := rad_to_deg(absf(_swing_angle))
-	return signf(_swing_angle) == signf(_swing_omega) and absf(_swing_omega) > 0.01 \
-			and angle_deg >= tuning.perfect_release_min_deg \
-			and angle_deg <= tuning.perfect_release_max_deg
-
-
-func _release_swing(jumped: bool) -> void:
-	var anchor := _anchor
-	var tangent := _swing_tangent()
-	var speed := _swing_omega * _rope_length
-	var perfect := jumped and is_in_perfect_window()
-
-	velocity = tangent * speed * tuning.release_boost
-	if perfect:
-		velocity *= tuning.perfect_release_bonus
-	if jumped:
-		velocity.y += tuning.release_jump_bonus
-
-	last_release_perfect = perfect
-	_last_anchor = anchor
-	_regrab_timer = tuning.regrab_cooldown
-	_anchor = null
-	_jump_held = false
-	_coyote_timer = 0.0
-	state = State.AIR
-	if is_instance_valid(anchor):
-		anchor.set_grabbed(false)
-	EventBus.vine_released.emit(anchor, perfect)
-
-
-# ---------------------------------------------------------------- Tırmanma
-
-func _start_climb(vine: ClimbVine) -> void:
-	_climb_vine = vine
-	velocity = Vector3.ZERO
-	_jump_buffer_timer = 0.0
-	_jump_held = false
-	state = State.CLIMB
-	EventBus.climb_started.emit(vine)
-
-
-func _process_climb(delta: float) -> void:
-	if not is_instance_valid(_climb_vine) or not _climb_vine.enabled:
-		_release_climb(Vector3.ZERO, false)
-		return
-
-	var input := _get_move_input()
-	var hand_y := global_position.y + HAND_HEIGHT
-	var top_y := _climb_vine.get_top().y - CLIMB_END_MARGIN
-	var bottom_y := _climb_vine.get_bottom().y + CLIMB_END_MARGIN
-
-	# Zıplama: yön tuşu basılıysa yana, değilse yukarı sıçrama
-	if _jump_buffer_timer > 0.0:
-		_jump_buffer_timer = 0.0
-		var dir := _input_to_world(Vector2(input.x, 0.0 if CameraDirector.is_side_mode() else input.y))
-		var jump_vel := Vector3.UP * tuning.get_climb_jump_velocity()
-		if dir.length() > 0.3:
-			jump_vel += dir.normalized() * tuning.climb_jump_speed_x
-			_input_lock_timer = tuning.climb_jump_lock
-		_release_climb(jump_vel, true)
-		return
-
-	# Aşağı basılıyken alt uca gelindiyse bırak
-	if input.y < -0.5 and hand_y <= bottom_y + 0.01:
-		_release_climb(Vector3.ZERO, false)
-		return
-
-	var climb_dir := input.y
-	if climb_dir > 0.0 and hand_y >= top_y:
-		climb_dir = 0.0
-	var target_y := clampf(hand_y + climb_dir * tuning.climb_speed * delta, bottom_y, top_y)
-
-	# Gövdeyi sarmaşığa doğru yumuşakça hizala; dikeyde hedefe git
-	var vine_point := _climb_vine.get_top()
-	var target := Vector3(vine_point.x, target_y - HAND_HEIGHT,
-			rail_z if CameraDirector.is_side_mode() else vine_point.z)
-	var to_target := target - global_position
-	var snap := minf(1.0, tuning.rail_pull * delta * 2.0)
-	velocity = Vector3(to_target.x * snap, to_target.y, to_target.z * snap) / delta
-	move_and_slide()
-
-	# Aşağı inerken yere değdiyse sarmaşıktan in
-	if is_on_floor() and input.y < -0.5:
-		_release_climb(Vector3.ZERO, false)
-
-
-func _release_climb(new_velocity: Vector3, jumped: bool) -> void:
-	var vine := _climb_vine
-	velocity = new_velocity
-	_last_climb_vine = vine
-	_climb_regrab_timer = tuning.climb_regrab_cooldown
-	_climb_vine = null
-	_jump_held = jumped
-	_coyote_timer = 0.0
-	state = State.AIR
-	EventBus.climb_ended.emit(vine, jumped)
+		swing_state.begin(best_swing)
 
 
 # ---------------------------------------------------------------- Görsel / güvenlik
@@ -477,16 +321,29 @@ func _release_climb(new_velocity: Vector3, jumped: bool) -> void:
 func _update_visual(delta: float) -> void:
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	if state == State.SWING:
-		horizontal = _swing_axis * signf(_swing_omega)
-	elif state == State.CLIMB:
+		horizontal = swing_state.axis * signf(swing_state.omega)
+	elif state == State.CLIMB or state == State.HURT or state == State.DEAD:
 		horizontal = Vector3.ZERO
+	if state == State.CLIMB:
 		_facing_yaw = PI   # sarmaşığa (kameradan uzağa) bakar
-	if horizontal.length() > 0.5:
+	elif horizontal.length() > 0.5:
 		# Model +Z'ye bakar (docs/07_ART_PIPELINE.md)
 		_facing_yaw = atan2(horizontal.x, horizontal.z)
+		facing = horizontal.normalized()
 	_visual.rotation.y = lerp_angle(_visual.rotation.y, _facing_yaw, minf(1.0, tuning.turn_speed * delta))
+
+	# Dokunulmazlıkta yanıp sönme
+	if is_invulnerable() and state != State.DEAD:
+		_blink_timer -= delta
+		if _blink_timer <= 0.0:
+			_blink_timer = tuning.invuln_blink
+			_visual.visible = not _visual.visible
+	elif not _visual.visible:
+		_visual.visible = true
 
 
 func _check_fall_out() -> void:
 	if global_position.y < tuning.kill_y:
 		respawn(_last_safe_position + Vector3.UP * 0.2)
+		# Düşüş cezası: 1 yaprak (docs/02 Oda Kuralı 3), geri itme yok
+		take_damage(tuning.fall_damage, global_position, false)

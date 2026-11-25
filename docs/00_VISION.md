@@ -48,3 +48,8 @@
 | 2026-11-25 | M1–M3 test odaları kodla kurulan greybox (`GreyboxRoom`), 0–3 tuşu ile seçilir | Oda/kapı sistemi M4'te; şimdilik web build'de hızlı erişim |
 | 2026-11-25 | Debug HUD'da canlı tuning paneli (F2) + "Kopyala" | Hareket hissi web build'de oynanarak ayarlanır, değerler .tres'e taşınır |
 | 2026-11-25 | M3'te Phantom Camera denenecek; sorun çıkarsa kendi CameraRig'imizle devam | Kullanıcı kararı; CameraDirector API'si sabit kalır |
+| 2026-11-25 | Çukura düşüş = güvenli noktaya dönüş + 1 yaprak | Kullanıcı kararı; docs/02 Oda Kuralı 3 ile uyumlu |
+| 2026-11-25 | Can 0 → oda baştan, tam can, düşmanlar yeniden doğar (M4'te son Ocak) | Kullanıcı kararı; Ocak sistemi gelene kadar basit ve adil |
+| 2026-11-25 | Savrulma Saldırısı M2'ye alındı (≥ 8 m/s → 2 hasar) | Kullanıcı kararı; Sütun 3: kamçı + sallanma aynı fiil |
+| 2026-11-25 | Yol açan düşmanlar yeniden doğar (`respawn_time`) | Pogo basamağı Şişkin'i yanlış öldürmek odayı kilitlemesin (soft-lock yok) |
+| 2026-11-25 | Oyuncu durum makinesi `scripts/player/states/` altında RefCounted durum nesneleri | player.gd 400 satırı geçti (docs/06 kuralı); düğüm yerine nesne → sahne ağacı sade |

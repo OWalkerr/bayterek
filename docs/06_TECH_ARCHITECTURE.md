@@ -31,8 +31,8 @@ res://
 │   └── ui/
 ├── scripts/
 │   ├── autoload/            # EventBus, GameState, CameraDirector, SceneRouter…
-│   ├── player/  camera/  world/{rooms}/  enemies/  ui/  fx/
-│   └── core/                # StateMachine, utilities
+│   ├── player/{states}/  camera/  world/{rooms}/  enemies/  ui/  fx/
+│   └── core/                # Layers (fizik katmanları), yardımcılar
 ├── tests/                   # headless test sahneleri
 └── tools/                   # deploy_web.sh (gh-pages)
 ```
@@ -52,16 +52,32 @@ res://
 
 ## Oyuncu Mimarisi
 ```
-Player (CharacterBody3D)  ── player.gd
+Player (CharacterBody3D)  ── player.gd (bağlam: zamanlayıcılar, girdi, tutunma seçimi, can/hasar)
 ├── Visual (Node3D)        # AI model + AnimationTree buraya
-├── CollisionShape3D       # Kapsül r=0.35 h=1.6
-├── GrabArea (Area3D)      # Sarmaşık algılama
-├── WhipHitbox (Area3D)    # Kamçı vuruşu (M2)
-└── StateMachine           # (M2'de ayrı düğümlere bölünecek)
+├── CollisionShape3D       # Kapsül r=0.35 h=1.6 — katman "player" (2), maske "world" (1)
+└── WhipCombat (Node3D)    # player_combat.gd — kombo, yukarı/aşağı (pogo), Savrulma Saldırısı, hit-stop
 ```
-Durumlar: `GROUND`, `AIR`, `SWING`, `CLIMB`, `WALL` (M3+), `HURT`, `DEAD`, `CINEMATIC`.
+Durumlar: `GROUND`, `AIR`, `SWING`, `CLIMB`, `HURT`, `DEAD`, `CINEMATIC` (`WALL` M5+).
 
-Prototipte durumlar tek dosyada (`player.gd`, enum + match). Dosya 400 satırı geçince `scripts/player/states/*.gd` olarak bölünür.
+**Durum makinesi (M2'de bölündü):** `scripts/player/states/*.gd`, taban `PlayerState` (RefCounted: `enter`, `exit`, `physics_update`, `can_attack`).
+| Durum nesnesi | Enum | Görev |
+|---|---|---|
+| `PlayerMoveState` | GROUND, AIR | Koşma, zıplama, coyote/buffer, momentum koruma, havada yakalama |
+| `PlayerSwingState` | SWING | Kinematik sarkaç, bırakma, mükemmel bırakma |
+| `PlayerClimbState` | CLIMB | Tırmanma, yana zıplama |
+| `PlayerHurtState` | HURT | Geri itilme |
+| `PlayerDeadState` | DEAD | Kontrol kilidi; kabuk odayı yeniden başlatır |
+| `PlayerCinematicState` | CINEMATIC | Kilit |
+Tek geçiş noktası `Player.change_state()`; aynı nesneye geçişte (GROUND↔AIR) `enter/exit` çağrılmaz.
+
+## Düşman Mimarisi
+```
+Enemy (CharacterBody3D) ── enemy.gd  katman "enemy" (3), maske "world"
+├── Visual (Node3D)
+├── CollisionShape3D
+└── Hurtbox (Area3D)     # katman "hurtbox" (4), maske "player": kamçı sorgusu + temas hasarı
+```
+Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Tehlike alanları (`SporeCloud`) katman "hazard" (5).
 
 ## Oda (Room) Sistemi
 - Her oda ayrı `.tscn`; kök düğüm `Room` (`room.gd`): `room_id`, `bounds: AABB`, `region`, `map_cell: Vector2i`.
@@ -85,8 +101,10 @@ Prototipte durumlar tek dosyada (`player.gd`, enum + match). Dosya 400 satırı 
   | `validate_scripts.tscn` | `scripts/` altındaki tüm .gd dosyaları derleniyor mu |
   | `test_movement.tscn` | M0 duman testi: koşma, zıplama, sallanma, mağara kamerası, güvenli nokta |
   | `test_m1.tscn` | Coyote, jump buffer, tırmanma, çürük sarmaşık, mükemmel bırakma + **bot ile 3 odanın geçilmesi** |
+  | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
+- **Serbest bırakılmış düğüm tuzağı:** Ölüp `queue_free` olan düşmanın metodunu çağırmak (ör. `is_dead()`) motoru çökertir (signal 11) → önce `is_instance_valid()`.
 - **Girdi simülasyonu tuzağı:** Godot 4.6'da `Input.action_press()` bir sonraki fizik karesinde "just pressed" olur; testte tuş en az 2–3 kare basılı tutulmalı.
 - **Bot:** `test_m1.gd` içindeki bot yönü basılı tutar, kenarda/tırmanma sarmaşığı önünde zıplar, sallanırken salınım yönünde pompalar ve açı > 40° & ω > 0 iken bırakır. `BOT_ANGLE=50` ile bırakma açısı, `BOT_ONLY=1` ile yalnızca bot, `BOT_DEBUG=1` ile kare kare iz alınır.
 - Her milestone sonunda web export alınır: `tools/deploy_web.sh "mesaj"` → `build/web/` → `gh-pages` dalı (main'e build girmez). Oynanabilir link: https://owalkerr.github.io/bayterek/
@@ -94,7 +112,7 @@ Prototipte durumlar tek dosyada (`player.gd`, enum + match). Dosya 400 satırı 
 ## Geliştirme Kısayolları (M1–M3, M4'te kalkar)
 | Tuş | İşlev |
 |---|---|
-| 0–3 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit) |
+| 0–4 | Greybox test odası seç (Kök Ağzı, Savrulma Zinciri, Tırmanma Kuyusu, Çürük Geçit, Çürük Yuvası) |
 | R | Odayı baştan başlat |
 | F1 | Debug bilgisi (durum, konum, coyote/buffer, θ/ω/L, mükemmel pencere) |
 | F2 | Canlı tuning paneli (kaydırıcılar, "Kopyala" → .tres metni) |

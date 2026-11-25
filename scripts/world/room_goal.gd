@@ -19,6 +19,8 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	monitoring = true
 	monitorable = false
+	collision_layer = 0
+	collision_mask = Layers.PLAYER
 	var shape := BoxShape3D.new()
 	shape.size = size
 	var col := CollisionShape3D.new()

@@ -28,6 +28,7 @@
  ▰▰▰▰▱▱       ← Öz barı (altın, damar dokulu)
  ◆ 128         ← Öz damlası (para) — sadece değişince 3 sn görünür
 ```
+- **M2 durumu:** Yapraklar `GameHud` ile çiziliyor (dolu `#5E8C4A`, kuru `#7A5A3A`, kaybedilen yaprak 0.3 sn büyür). Öz barı ve para M5+.
 - Sağ alt: yetenek kazanıldığında veya kanca hedefi görüldüğünde küçük tuş ipucu.
 - Mini harita yok (keşfi öldürmesin); harita menüde. İsteğe bağlı mini harita ayarı.
 

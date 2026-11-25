@@ -19,6 +19,15 @@
 | **Kuzgun Kam** | Yuva / Taç | Uzaktan büyü atar, ışınlanır | "Kanca ile yakalayabilir misin?" |
 | **Polen Kovanı** | Taç | Böcek sürüsü üretir | "Kaynağı yok edebilir misin?" |
 
+### Uygulanan düşmanlar (M2, greybox)
+| Düşman | Sınıf | Can | Davranış (sayılar) | Durumlar |
+|---|---|---|---|---|
+| Çürük Sürüngen | `RotCrawler` | 3 | 2 m/s yürür; duvarda ve 0.6 m önünde zemin yoksa döner; temas 1 hasar | WALK, STAGGER |
+| Spor Şişkini | `SporeBloater` | 1 | Yuvasında süzülür (±0.25 m); 6 m içindeki oyuncuya yatayda 1 m/s sürüklenir (yuvadan en fazla 5 m); temas 1 hasar; ölünce **Spor Bulutu** | IDLE, DRIFT, STAGGER |
+| Spor Bulutu | `SporeCloud` | – | 1.8 m yarıçap; 0.3 sn büyür (uyarı), sonra 2 sn içindeki oyuncuya 1 hasar. Kamçı menzili 2.5 m > 1.8 m → uzaktan vurmak güvenli | – |
+
+- Ortak taban: `Enemy` (`scripts/enemies/enemy.gd`) — can, Hurtbox (katman 4), temas hasarı, geri itilme, beyaz parlama, ölüm ve isteğe bağlı **yeniden doğma** (`respawn_time`). Yol açmak için gereken düşmanlar (ör. pogo basamağı Şişkin) yeniden doğar → soft-lock yok.
+
 AI uygulaması: Basit düşmanlar GDScript durum makinesi (`EnemyStateMachine`). Karmaşık bosslar için LimboAI (yalnızca PC build'inde test edilmişse) veya kendi `BossPhaseController`'ımız.
 
 ## Boss Tasarım Şablonu

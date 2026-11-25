@@ -12,6 +12,8 @@ extends Area3D
 func _ready() -> void:
 	monitoring = true
 	monitorable = false
+	collision_layer = 0
+	collision_mask = Layers.PLAYER
 	if get_child_count() == 0 or not _has_shape():
 		var shape := BoxShape3D.new()
 		shape.size = size

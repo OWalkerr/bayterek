@@ -77,15 +77,32 @@ pozisyon = anchor + L · (sin θ, -cos θ)
 | Hamle | Girdi | Etki |
 |---|---|---|
 | Kamçı vuruşu | Saldırı | 3'lü kombo; menzil 2.5 m; 1–1–2 hasar |
-| Yukarı / aşağı vuruş | Yön + Saldırı | Aşağı vuruş düşmana değerse **zıplatır** (pogo) |
+| Yukarı / aşağı vuruş | Yön + Saldırı | Aşağı vuruş (yalnız havada) düşmana değerse **zıplatır** (pogo) |
 | Kamçı Kancası | Kanca tuşu | 8 m menzil; kanca çiçeğine yapışır veya küçük düşmanı sersemletir |
 | Öz Çekimi | Kanca (basılı tut) | Hafif düşman/nesneyi oyuncuya çeker; ağır nesneye oyuncuyu çeker |
-| Savrulma Saldırısı | Sallanırken Saldırı | Sallanma hızına göre artan hasar |
+| Savrulma Saldırısı | Sallanırken Saldırı | Oyuncu çevresinde 2 m yarıçap; sarmaşık hızı ≥ 8 m/s ise 2, değilse 1 hasar (M2'de eklendi) |
 | Kök Darbesi | Havada aşağı + Saldırı (basılı) | Yere çakılma, alan hasarı (sonradan) |
 
-- **Can sistemi:** Can "yaprak" olarak gösterilir; başlangıç 5 yaprak.
-- **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır.
-- **Hasar alma:** 0.8 sn dokunulmazlık, geri itilme.
+### 3.1 Kamçı sayıları (M2, `PlayerTuning` "Kamçı")
+| Parametre | Değer | Not |
+|---|---|---|
+| Vuruş süresi | 0.26 sn | İsabet yalnızca 0.05–0.16 sn arası aktif |
+| İsabet hacmi (ileri) | 2.5 × 1.2 × 1.2 m kutu | Gövde ortasından bakış yönüne |
+| İsabet hacmi (yukarı / aşağı) | 1.2 × 2.5 × 1.2 m kutu | Aşağı: ayak tabanının 0.3 m üstünden aşağı |
+| Kombo penceresi | 0.30 sn | Vuruş bittikten sonra; geç basılırsa kombo 1. vuruşa döner |
+| Saldırı tamponu | 0.15 sn | Erken basılan saldırı hatırlanır |
+| 3. vuruş sonrası bekleme | 0.30 sn | |
+| Pogo hızı | 10 m/s yukarı | ≈ normal zıplama (10.3 m/s) |
+| Düşman geri itme | 5 m/s | + 0.2 sn sersemleme |
+| Hit-stop | 50 ms, zaman ölçeği 0.05 | Gerçek zamanlı zamanlayıcı ile geri döner |
+| Fizik katmanları | world 1 · player 2 · enemy 3 · hurtbox 4 · hazard 5 | `scripts/core/layers.gd`; kamçı yalnızca **hurtbox** katmanını sorgular |
+
+### 3.2 Can (M2, `PlayerTuning` "Can")
+- **Can sistemi:** Can "yaprak" olarak gösterilir; başlangıç 5 yaprak (`GameState.leaves` / `max_leaves`).
+- **Öz (enerji):** Düşman vurdukça dolar; iyileşme (basılı tut, 1 sn) ve özel yeteneklerde harcanır. *(M5+)*
+- **Hasar alma:** 0.8 sn dokunulmazlık (yanıp sönme), 0.25 sn kontrolsüz geri itilme (6 m/s yatay, 5 m/s yukarı).
+- **Çukura düşüş:** Son güvenli noktaya dönüş + **1 yaprak** (karar 2026-11-25), geri itilme yok.
+- **Ölüm (0 yaprak):** "Alpay düştü…" → 1.2 sn sonra **oda baştan, tam can**, düşmanlar yeniden doğar (karar 2026-11-25). M4'te "son Ocak'a dön" olur.
 - **Hit-stop:** Vuruşta 50 ms, boss'a kritik vuruşta 100 ms; kamera titremesi küçük.
 
 ## 4. Yetenek Ağacı (kazanılma sırası)
@@ -121,7 +138,7 @@ Mağaraya girince veya özel tetikleyicide kamera karakterin arkasına döner:
 |---|---|---|
 | Hareket | Sol çubuk | A/D (derinlikte W/S de) |
 | Zıpla | A / Çarpı | Space |
-| Saldırı (kamçı) | X / Kare | J / Sol tık |
+| Saldırı (kamçı) | X / Kare | J / Sol tık (W+J yukarı, havada S+J aşağı) |
 | Kanca / Öz Çekimi | RT | K / Sağ tık |
 | Tutun / Bırak | LT (veya otomatik) | Shift |
 | İyileş | B / Daire (basılı) | L |

@@ -90,6 +90,22 @@ func climb_vine(top_position: Vector3, length: float) -> ClimbVine:
 	return v
 
 
+func crawler(at: Vector3, direction: float = 1.0) -> RotCrawler:
+	var e := RotCrawler.new()
+	e.start_direction = direction
+	e.position = at
+	add_child(e)
+	return e
+
+
+func bloater(at: Vector3, respawn_seconds: float = -1.0) -> SporeBloater:
+	var e := SporeBloater.new()
+	e.respawn_time = respawn_seconds
+	e.position = at
+	add_child(e)
+	return e
+
+
 func glow(at: Vector3, color: Color = C_GLOW) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
