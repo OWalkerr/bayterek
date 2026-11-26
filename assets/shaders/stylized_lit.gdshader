@@ -34,13 +34,15 @@ uniform float flash : hint_range(0.0, 1.0) = 0.0;
 uniform float wind_strength = 0.0;
 uniform float wind_speed = 1.6;
 uniform float wind_height = 1.0;
+// Salınımın sıfır olduğu yerel yükseklik (dikilen bitkide taban, sarkan kökte tepe → wind_height negatif).
+uniform float wind_base = 0.0;
 uniform vec3 push_origin = vec3(0.0, -1000.0, 0.0);
 uniform float push_radius = 1.4;
 uniform float push_strength = 0.5;
 
 void vertex() {
 	if (wind_strength > 0.0) {
-		float h = clamp(VERTEX.y / wind_height, 0.0, 1.0);
+		float h = clamp((VERTEX.y - wind_base) / wind_height, 0.0, 1.0);
 		h *= h;
 		vec3 base = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 		float ph = base.x * 0.73 + base.z * 0.41 + base.y * 0.2;

@@ -4,7 +4,7 @@
 [ext_resource type="Resource" path="res://data/tuning/player_tuning.tres" id="2_tuning"]
 [ext_resource type="Script" path="res://scripts/player/player_combat.gd" id="3_combat"]
 [ext_resource type="Script" path="res://scripts/player/player_animator.gd" id="4_anim"]
-[ext_resource type="PackedScene" path="res://assets/models/characters/alpay/char_alpay_tripo.glb" id="5_model"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/alpay/char_alpay.fbx" id="5_model"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_body"]
 radius = 0.35

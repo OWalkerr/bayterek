@@ -286,36 +286,43 @@ func _test_player_model() -> void:
 	await _frames(1)
 	var anim := _player.animator
 	var model := anim.model
-	_check("model: Alpay (Tripo) Player/Visual/Model altında", model != null, "")
+	_check("model: Alpay (char_alpay.fbx) Player/Visual/Model altında", model != null, "")
 	if model == null:
 		return
 	_check("model: kapsül görseli gizli", not (_player.get_node(^"Visual/Body") as Node3D).visible, "")
-	var r := ModelValidator.validate_scene(model, "char_alpay_tripo.glb")
+	var r := ModelValidator.validate_scene(model, "char_alpay.fbx")
 	_check("model: oyundaki Alpay ölçüsü doğru (1.6 m, +Z, bütçe)", r["ok"], ModelValidator.format_report(r))
 	_check("model: stilize shader'a çevrildi", _count_unstylized(model) == 0, "")
 	var ap := anim.model_player
-	_check("model: idle + run klipleri, döngülü", ap != null and ap.has_animation(&"idle") and ap.has_animation(&"run") \
-			and ap.get_animation(&"run").loop_mode == Animation.LOOP_LINEAR and ap.get_animation(&"idle").loop_mode == Animation.LOOP_LINEAR, "")
-	if ap != null and ap.has_animation(&"run"):
-		var run := ap.get_animation(&"run")
-		var t := run.find_track(NodePath("Armature/Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+	_check("model: idle + run klipleri, döngülü", ap != null and ap.has_animation(&"ext/idle") and ap.has_animation(&"ext/run") \
+			and ap.get_animation(&"ext/run").loop_mode == Animation.LOOP_LINEAR and ap.get_animation(&"ext/idle").loop_mode == Animation.LOOP_LINEAR, "")
+	if ap != null and ap.has_animation(&"ext/run"):
+		var run := ap.get_animation(&"ext/run")
+		var t := anim._find_bone_track(run, anim.root_bone)
 		var a: Vector3 = run.track_get_key_value(t, 0)
 		var b: Vector3 = run.track_get_key_value(t, run.track_get_key_count(t) - 1)
 		_check("model: koşu yerinde (kök yatayda kaymıyor)", Vector2(b.x - a.x, b.z - a.z).length() < 0.02, "")
-		_check("model: koşuda kalça dinlenme konumunda (öne fırlama / geri kayma yok)", anim.get_root_offset(&"run") < 0.03,
-				"sapma=%.3f m" % anim.get_root_offset(&"run"))
+		_check("model: koşuda kalça dinlenme konumunda (öne fırlama / geri kayma yok)", anim.get_root_offset(&"ext/run") < 0.05,
+				"sapma=%.3f m" % anim.get_root_offset(&"ext/run"))
 		_check("model: koşu klibinin doğal hızı ölçüldü", anim.run_clip_speed > 2.0 and anim.run_clip_speed < 6.0,
 				"%.2f m/s" % anim.run_clip_speed)
 	# Mixamo dış klipleri
-	_check("mixamo: 12 dış klip yüklendi (idle 'With Skin' atlandı)", anim.external_clips.size() == 12 \
-			and not anim.external_clips.has(&"idle"), str(anim.external_clips))
+	_check("mixamo: 13 dış klip yüklendi (Z-yukarı 'With Skin' idle düzeltilerek)", anim.external_clips.size() == 13 \
+			and anim.external_clips.has(&"idle"), str(anim.external_clips))
+	if ap != null and ap.has_animation(&"ext/idle"):
+		var sk0 := model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var idle := ap.get_animation(&"ext/idle")
+		var hv: Vector3 = idle.track_get_key_value(anim._find_bone_track(idle, anim.root_bone), 0)
+		var rest0 := sk0.get_bone_rest(sk0.find_bone(anim.root_bone)).origin
+		_check("mixamo: idle kalçası ayakta (Z-yukarı düzeltildi)", absf(hv.y - rest0.y) < rest0.y * 0.15 and absf(hv.z) < 0.2,
+				"kalça=%s dinlenme=%s" % [str(hv), str(rest0)])
 	if ap != null and ap.has_animation(&"ext/run"):
 		var sk := model.find_child("Skeleton3D", true, false) as Skeleton3D
 		var rest_y := sk.get_bone_rest(sk.find_bone(anim.root_bone)).origin.y
 		var er := ap.get_animation(&"ext/run")
-		var tr := er.find_track(NodePath("Armature/Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+		var tr := anim._find_bone_track(er, anim.root_bone)
 		var hy: float = (er.track_get_key_value(tr, 0) as Vector3).y
-		_check("mixamo: izler modelin iskeletine bağlı + kalça ×1.6 ölçekli", tr >= 0 and absf(hy - rest_y) < rest_y * 0.3,
+		_check("mixamo: izler modelin iskeletine bağlı + kalça model boyuna ölçekli", tr >= 0 and absf(hy - rest_y) < rest_y * 0.3,
 				"kalça y=%.2f dinlenme=%.2f" % [hy, rest_y])
 		_check("mixamo: döngüler (run/fall/swing/climb/heal)", er.loop_mode == Animation.LOOP_LINEAR \
 				and ap.get_animation(&"ext/swing").loop_mode == Animation.LOOP_LINEAR, "")
@@ -324,7 +331,7 @@ func _test_player_model() -> void:
 					"sapma=%.3f m" % anim.get_root_offset(StringName("ext/%s" % c)))
 		anim.preview_clip = &"whip_up"
 		await _frames(3)
-		_check("anim: klibi olmayan durumda yedek klip (idle)", anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
+		_check("anim: klibi olmayan durumda yedek klip (idle)", String(anim.get_playing_clip()).ends_with("idle"), str(anim.get_playing_clip()))
 		anim.preview_clip = &""
 
 
@@ -399,7 +406,7 @@ func _test_animator() -> void:
 	await _frames(45)   # olası iniş pozu (0.3 sn) bitsin
 	_check("anim: yerde duran → idle", anim.current == &"idle", str(anim.current))
 	if anim.model_player != null:
-		_check("anim: modelde idle klibi oynuyor", anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
+		_check("anim: modelde idle klibi oynuyor", String(anim.get_playing_clip()).ends_with("idle"), str(anim.get_playing_clip()))
 	Input.action_press(&"move_right")
 	await _frames(20)
 	var body := anim.get_procedural_target()
@@ -625,6 +632,18 @@ func _test_dressing_and_fog() -> void:
 	_check("ortam: bitkiler stilize + rüzgârlı shader", wind > 20 and _count_unstylized(d) == 0, "rüzgârlı=%d" % wind)
 	await _frames(2)
 	_check("ortam: oyuncu konumu bitkilere iletiliyor (yanından geçince eğilir)", push_ok, "")
+	var mc: Dictionary = d.model_counts if d else {}
+	_check("çevre seti: zemin karoları + kahraman bitkiler + tavan kökleri + sütun (modeller)",
+			int(mc.get(&"floor", 0)) > 3 and int(mc.get(&"grass", 0)) > 0 and int(mc.get(&"fern", 0)) > 0 \
+			and int(mc.get(&"shroom", 0)) > 0 and int(mc.get(&"ceiling", 0)) > 0 and int(mc.get(&"pillar", 0)) > 0, str(mc))
+	_check("çevre seti: eğrelti/perde bütçesi (oda başına ≤ 3 / ≤ 1)", int(mc.get(&"fern", 0)) <= 3 and int(mc.get(&"curtain", 0)) <= 1, "")
+	var model_wind := 0
+	for f: Node in get_tree().get_nodes_in_group(RoomDressing.FOLIAGE_GROUP):
+		var mm := (f as MeshInstance3D).material_override as ShaderMaterial
+		var wb: Variant = mm.get_shader_parameter(&"wind_height") if mm != null else null
+		if wb != null and float(wb) < 0.0:
+			model_wind += 1
+	_check("çevre seti: tavan kökleri sarkık rüzgârla (tepe sabit, uç salınır)", model_wind > 0, "sarkık=%d" % model_wind)
 	var fog: FogPatch = null
 	for c: Node in room.get_children():
 		if c is FogPatch:

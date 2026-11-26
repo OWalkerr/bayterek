@@ -66,6 +66,7 @@ static func stylize_material(source: Material) -> Material:
 		mat.set_shader_parameter(&"wind_height", float(w.get("height", 1.0)))
 		mat.set_shader_parameter(&"wind_speed", float(w.get("speed", 1.6)))
 		mat.set_shader_parameter(&"push_strength", float(w.get("push", 0.5)))
+		mat.set_shader_parameter(&"wind_base", float(w.get("base", 0.0)))
 	mat.set_meta(META_SOURCE, std)
 	_cache[key] = mat
 	return mat

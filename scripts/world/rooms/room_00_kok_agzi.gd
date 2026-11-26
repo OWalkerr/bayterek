@@ -56,7 +56,7 @@ func _build() -> void:
 	place_goal(Vector3(57.5, 16.0, 0.0))
 
 	# M7 sanat: mağara ağzını çerçeveleyen kök kemer, kayalar, arka planda süzülen kök platform
-	decor(E_ARCH, Vector3(26.0, 0.0, -2.9), 0.0, 2.0)
+	decor(E_CAVE_MOUTH, Vector3(26.0, 0.0, -3.0), 0.0, 1.35)
 	decor(E_ROCK, Vector3(-8.5, 0.0, -2.3), 20.0)
 	decor(E_ROCK, Vector3(46.0, 0.0, -2.4), -35.0, 0.8)
 	decor(E_PLATFORM, Vector3(4.0, 8.5, -2.9), 10.0)

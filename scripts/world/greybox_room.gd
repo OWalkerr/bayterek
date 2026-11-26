@@ -17,6 +17,9 @@ const C_SKY := Color("f4efe3")
 const E_ARCH := "res://assets/models/environment/env_root_arch_4m_a.glb"
 const E_ROCK := "res://assets/models/environment/env_rock_2m_a.glb"
 const E_PLATFORM := "res://assets/models/environment/env_root_platform_4m_a.glb"
+const E_CAVE_MOUTH := "res://assets/models/environment/env_cave_mouth_6m_a.glb"
+const E_BRIDGE := "res://assets/models/environment/env_root_bridge_6m_a.glb"
+const E_LEDGE := "res://assets/models/environment/env_root_ledge_1m_a.glb"
 
 var goal: RoomGoal = null
 ## Otomatik sınırlara eklenen pay (m).
@@ -212,6 +215,20 @@ func decor(path: String, at: Vector3, yaw_deg: float = 0.0, scale_mul: float = 1
 
 
 func glow(at: Vector3, color: Color = C_GLOW) -> void:
+	# Zemindeki mantar ışıkları: mantar kümesi modeli varsa küre yerine o (ışık aynı kalır).
+	# Odalar zemin ışığını "zemin + 0.4" yüksekliğine koyar (y'nin ondalığı .4); duvar/hava ışıkları küre kalır.
+	var on_floor := absf(fposmod(at.y, 1.0) - 0.4) < 0.01
+	if color == C_GLOW and on_floor and ResourceLoader.exists(RoomDressing.M_SHROOM):
+		var shroom := decor(RoomDressing.M_SHROOM, at - Vector3.UP * 0.4, fposmod(at.x * 37.0 + at.z * 11.0, 360.0), 0.8)
+		if shroom != null:
+			shroom.add_to_group(&"glow_shroom")
+		var l := OmniLight3D.new()
+		l.light_color = color
+		l.light_energy = 1.5
+		l.omni_range = 6.0
+		l.position = at + Vector3.UP * 0.6
+		add_child(l)
+		return
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.emission_enabled = true

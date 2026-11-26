@@ -33,6 +33,7 @@ func _build() -> void:
 	box(Vector3(20.0, 4.0, -30.5), Vector3(22.0, 10.0, 1.0), C_CAVE)        # dip duvar
 	box(Vector3(24.0, 1.0, -6.0), Vector3(2.0, 2.0, 2.0), C_ROOT)           # sütun (etrafından dolaş)
 	fog(Vector3(20.0, 0.0, -14.0), Vector3(12.0, 1.4, 10.0))                # mağara pusu
+	decor(E_CAVE_MOUTH, Vector3(14.0, 0.0, -3.0), 0.0, 1.35)                # mağara ağzı çerçevesi
 
 	# Uçurum üstü sarmaşık (derinlik düzleminde sarkaç)
 	vine(Vector3(14.0, 7.5, -14.0), 4.0)

@@ -18,3 +18,4 @@ func _build() -> void:
 	decor(E_PLATFORM, Vector3(19.0, 1.0, -3.6), -20.0, 1.3)
 	decor(E_ROCK, Vector3(-7.0, 0.0, -2.2), 0.0, 0.8)
 	fog(Vector3(15.0, -2.0, 0.0), Vector3(22.0, 3.0, 4.0))
+	decor(E_BRIDGE, Vector3(15.0, 14.0, -3.6), 0.0, 1.3)                    # yukarıda, ulaşılmaz kök köprüsü (arka plan)

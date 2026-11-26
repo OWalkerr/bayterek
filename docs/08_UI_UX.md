@@ -67,7 +67,7 @@ Amaç: "yaşayan ağaç" hissi, yumuşak ve sakin hareket; oynanışı okunur b�
 - **Dallar/kökler:** tavan ve sarkıntıların altına sarkan kök saçakları (0.8–2.4 m) + aralarından ara sıra salınarak düşen yapraklar.
 - **Işık:** mantar ışıkları yavaşça nefes alır (±%12); oda boyunca süzülen turkuaz sporlar + seyrek altın ateşböcekleri.
 - **Sis öbekleri** (`FogPatch`, `GreyboxRoom.fog()`): yere çökmüş yumuşak puflar (billboard). Oyuncu içinden geçince puflar ondan uzağa itilir, hızıyla sürüklenir ve incelir (hızlı açılır, ≈ 2 sn'de yavaşça geri toplanır). Hacimsel sis web'de olmadığı için bu yöntem iki arka uçta aynı görünür. Yerler: Kök Ağzı çukuru + mağara, Ocak Odası zemini, Tırmanma Kuyusu dibi, Çürük Geçit uçurumu (sis denizi), Kanca Bahçesi uçurumu, Spor Mahzeni (spor pusu), Yankı Mağarası, Üst Kökler, Kökyiyen arenası.
-- **Çevre modelleri:** kök kemer, kaya, kök platform odaların arka planında süs (çarpışmasız, `GreyboxRoom.decor()`).
+- **Çevre modelleri:** kök kemer, kaya, kök platform odaların arka planında süs (çarpışmasız, `GreyboxRoom.decor()`). İkinci teslimden sonra zeminler kök/yosun karolarıyla kaplı, tavanlarda sallanan kök kütleleri ve sarmaşık perdesi, duvarlardan dallar, arkada sütun ve kök duvarı kümeleri (docs/07 "Yeni Alpay modeli ve çevre seti").
 
 ## Lokalizasyon
 - Tüm metinler `tr()` ile; `data/localization/strings.csv` (keys, tr, en).

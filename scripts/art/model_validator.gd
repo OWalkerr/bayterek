@@ -15,6 +15,12 @@ const BUDGETS: Dictionary = {
 	&"prop": [500, 5000, 1024],
 	&"env": [1000, 8000, 1024],
 }
+## Bütçe istisnaları (ad → en çok üçgen): kullanıcı onayıyla, sahnede sınırlı adette kullanılan "kahraman" parçalar.
+## Eğrelti: oda başına ≤ 3; sarmaşık perdesi: oda başına ≤ 1 (RoomDressing / oda script'i). Yeniden üretimde 8k hedeflenir.
+const TRI_OVERRIDES: Dictionary = {
+	"fern_1m_a": 20000,
+	"vine_curtain_4m_a": 16000,
+}
 ## Bilinen modellerin beklenen boyu (m) ve toleransı (docs/07: Alpay 1.6, Kocabaş ~3, Kökyiyen 12–15).
 const EXPECTED_HEIGHT: Dictionary = {
 	"alpay": [1.6, 0.15],
@@ -61,8 +67,11 @@ static func validate_scene(root: Node3D, path: String) -> Dictionary:
 		errors.append("Tür öneki yok (char_/npc_/enm_/boss_/prop_/env_): %s" % path.get_file())
 	else:
 		var budget: Array = BUDGETS[kind]
-		if stats["triangles"] > budget[1]:
-			errors.append("Üçgen bütçesi aşıldı: %d > %d" % [stats["triangles"], budget[1]])
+		var max_tris: int = TRI_OVERRIDES.get(name_of(path), budget[1])
+		if stats["triangles"] > max_tris:
+			errors.append("Üçgen bütçesi aşıldı: %d > %d" % [stats["triangles"], max_tris])
+		elif max_tris > budget[1] and stats["triangles"] > budget[1]:
+			warnings.append("Bütçe istisnası: %d üçgen (> %d) — sahnede sınırlı adet" % [stats["triangles"], budget[1]])
 		elif stats["triangles"] < budget[0]:
 			warnings.append("Üçgen sayısı bütçenin altında (%d < %d) — siluet yeterli mi?" % [stats["triangles"], budget[0]])
 		if stats["max_texture"] > budget[2]:

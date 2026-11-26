@@ -15,14 +15,43 @@ const C_FERN := Color("4f8a5a")
 const C_ROOT_STRAND := Color("4a3428")
 const C_SHROOM := Color("4fb3a9")
 
+## Kullanıcının ürettiği çevre seti (docs/11). Dosya yoksa ilgili adım atlanır (prosedürel yedek kalır).
+const ENV := "res://assets/models/environment/"
+const M_FLOOR := ENV + "env_root_floor_4m_a.glb"
+const M_GRASS := ENV + "env_grass_tuft_05m_a.glb"
+const M_FERN := ENV + "env_fern_1m_a.glb"
+const M_SHROOM := ENV + "env_mushroom_cluster_1m_a.glb"
+const M_CEILING := ENV + "env_ceiling_roots_4m_a.glb"
+const M_CURTAIN := ENV + "env_vine_curtain_4m_a.glb"
+const M_BRANCH := ENV + "env_branch_3m_a.glb"
+const M_PILLAR := ENV + "env_root_pillar_6m_a.glb"
+const M_ROCK_S := ENV + "env_rock_1m_b.glb"
+const M_PLATFORM_S := ENV + "env_root_platform_2m_a.glb"
+const M_WALL := ENV + "env_root_wall_4m_a.glb"
+
 @export var grass_spacing: float = 0.85
 @export var max_tufts: int = 140
 @export var max_strands: int = 40
 @export var mote_color: Color = Color("7fe0d2")
+## Model yerleşim sınırları (web bütçesi: eğrelti 19k, perde 15k üçgen → az sayıda).
+@export var skin_floors: bool = true
+@export var max_floor_tiles: int = 18
+@export var max_grass_models: int = 8
+@export var max_ferns: int = 3
+@export var max_shroom_models: int = 3
+@export var max_ceiling_models: int = 4
+@export var max_curtains: int = 1
+@export var max_branches: int = 3
+@export var max_pillars: int = 3
+@export var max_wall_pieces: int = 3
+## Zemin karosunun renk çarpanı (Tripo yosunu bölge paletinde fazla açık kalıyor).
+@export var floor_tint: Color = Color(0.62, 0.68, 0.64)
 
 var room: GreyboxRoom
 var tuft_count: int = 0
 var strand_count: int = 0
+## Yerleştirilen model sayıları (testler ve bütçe için): {"floor": n, "grass": n, ...}
+var model_counts: Dictionary = {}
 var motes: CPUParticles3D
 var _wind_mats: Array[ShaderMaterial] = []
 var _glow_lights: Array[OmniLight3D] = []
@@ -31,6 +60,10 @@ var _time: float = 0.0
 var _player: Node3D
 
 static var _mesh_cache: Dictionary = {}
+## Model yolu + rüzgâr modu → bu odanın rüzgârlı materyali (oda başına; itiş noktası odaya özel)
+var _model_wind_mats: Dictionary = {}
+var _boxes: Array[AABB] = []
+var _backdrops: Array[AABB] = []
 
 
 static func dress(target: GreyboxRoom) -> RoomDressing:
@@ -55,6 +88,8 @@ func _build() -> void:
 	shroom.emission_energy_multiplier = 1.6
 	var shroom_mat := Stylizer.stylize_material(shroom)
 	var ceilings: Array[AABB] = []
+	_boxes.clear()
+	_backdrops.clear()
 	for child: Node in room.get_children():
 		var body := child as StaticBody3D
 		if body == null or body.collision_layer == 0:
@@ -66,12 +101,15 @@ func _build() -> void:
 			var size := (col.shape as BoxShape3D).size
 			var box := AABB(body.position - size * 0.5, size)
 			if box.position.z + box.size.z < -2.6:
+				_backdrops.append(box)
 				continue    # arka plan duvarı
+			_boxes.append(box)
 			_scatter_top(box, grass, grass_dark, fern, shroom_mat)
 			if box.size.x >= 2.0 and box.position.y > 2.5:
 				ceilings.append(box)
 	for box: AABB in ceilings:
 		_hang_strands(box, strand)
+	_place_models()
 	_add_motes()
 	for n: Node in room.get_children():
 		if n is OmniLight3D:
@@ -185,6 +223,235 @@ func _wind_material(color: Color, strength: float, height: float, speed: float, 
 	var sm := Stylizer.stylize_material(std) as ShaderMaterial
 	_wind_mats.append(sm)
 	return sm
+
+
+# ---------------------------------------------------------------- Çevre seti modelleri
+
+## Kutuları sınıflandırır ve modelleri yerleştirir:
+##  zemin kaplaması (yürünen yüzey, tavan değil) · ot/eğrelti/mantar modelleri (rüzgârlı) ·
+##  tavan kök kütleleri + sarmaşık perdesi (sarkık rüzgâr) · duvar dalları · arka plan sütunları/kayalar.
+func _place_models() -> void:
+	var b := room.bounds if room.bounds.size != Vector3.ZERO else room.compute_bounds()
+	var room_top := b.end.y
+	var floors: Array[AABB] = []
+	var ceils: Array[AABB] = []
+	var walls: Array[AABB] = []
+	for box: AABB in _boxes:
+		var is_ceiling := box.size.x >= 2.0 and box.size.y <= 2.5 and box.end.y >= room_top - 2.5 and box.position.y > 2.5
+		if is_ceiling:
+			ceils.append(box)
+		elif box.size.x >= 2.0 and box.size.z <= 6.0 and box.size.z >= 2.0:
+			floors.append(box)
+		elif box.size.x <= 2.0 and box.size.y >= 6.0:
+			walls.append(box)
+	if skin_floors:
+		for box: AABB in floors:
+			_skin_floor(box)
+	# yürünen yüzeylere kahraman bitkiler (arka sıra, koridoru kapatmaz)
+	var spots: Array[Vector3] = []
+	for box: AABB in floors:
+		var x := box.position.x + 1.0
+		while x < box.end.x - 1.0:
+			spots.append(Vector3(x + _rng.randf_range(-0.6, 0.6), box.end.y, clampf(box.position.z + 0.45, -1.7, -0.9)))
+			x += _rng.randf_range(2.5, 4.5)
+	_shuffle(spots)
+	var i := 0
+	for n in max_grass_models:
+		if i >= spots.size():
+			break
+		_model(M_GRASS, &"grass", spots[i], _rng.randf() * TAU, _rng.randf_range(0.8, 1.3), &"up", 0.08)
+		i += 1
+	for n in max_ferns:
+		if i >= spots.size():
+			break
+		_model(M_FERN, &"fern", spots[i], _rng.randf() * TAU, _rng.randf_range(0.9, 1.3), &"up", 0.1)
+		i += 1
+	for n in max_shroom_models:
+		if i >= spots.size():
+			break
+		var m := _model(M_SHROOM, &"shroom", spots[i], _rng.randf() * TAU, _rng.randf_range(0.6, 1.0), &"up", 0.02)
+		if m != null:
+			var l := OmniLight3D.new()
+			l.light_color = C_SHROOM
+			l.light_energy = 0.9
+			l.omni_range = 3.0
+			l.position = Vector3.UP * 0.6
+			m.add_child(l)
+			_glow_lights.append(l)
+			l.set_meta(&"base_energy", l.light_energy)
+		i += 1
+	# tavanlar: kök kütlesi (alt yüze asılı) + bir sarmaşık perdesi
+	var c_spots: Array[Vector3] = []
+	for box: AABB in ceils:
+		var x := box.position.x + 2.0
+		while x < box.end.x - 1.5:
+			c_spots.append(Vector3(x, box.position.y, clampf(box.position.z + 0.6, -1.8, -1.0)))
+			x += _rng.randf_range(5.0, 9.0)
+	_shuffle(c_spots)
+	var ci := 0
+	for n in max_ceiling_models:
+		if ci >= c_spots.size():
+			break
+		_hang_model(M_CEILING, &"ceiling", c_spots[ci], _rng.randf_range(0.6, 0.9))
+		ci += 1
+	for n in max_curtains:
+		if ci >= c_spots.size():
+			break
+		_hang_model(M_CURTAIN, &"curtain", c_spots[ci] + Vector3(0.0, 0.0, -0.3), _rng.randf_range(0.8, 1.0))
+		ci += 1
+	# duvar dalları: duvarın odaya bakan yüzünden dışarı (arka planda)
+	var w_spots: Array = []
+	for box: AABB in walls:
+		var inward := 1.0 if box.get_center().x < b.get_center().x else -1.0
+		var face_x := box.end.x if inward > 0.0 else box.position.x
+		var y := box.position.y + 2.5
+		while y < box.end.y - 1.0:
+			w_spots.append([Vector3(face_x, y, -1.4), inward])
+			y += _rng.randf_range(4.0, 7.0)
+	_shuffle(w_spots)
+	for n in mini(max_branches, w_spots.size()):
+		var at: Vector3 = w_spots[n][0]
+		var inward: float = w_spots[n][1]
+		# Dal modeli +X boyunca uzanıyor, tabanı -X ucunda → odaya doğru dönsün
+		var m := _model(M_BRANCH, &"branch", at + Vector3(inward * 1.4, -0.3, 0.0), 0.0 if inward > 0.0 else PI, 1.0, &"up", 0.04)
+		if m != null:
+			m.rotation.z = inward * 0.15
+	# arka plan: kök sütunları + küçük kayalar (oyuncu koridorunun arkasında)
+	var bx := b.position.x + _rng.randf_range(2.0, 6.0)
+	var pillars := 0
+	var floor_y := _floor_height_at(b)
+	while bx < b.end.x - 2.0 and pillars < max_pillars:
+		if _model(M_PILLAR, &"pillar", Vector3(bx, floor_y, -2.75), _rng.randf() * TAU, 1.0, &"none") != null:
+			pillars += 1
+		bx += _rng.randf_range(10.0, 18.0)
+	# arka duvarın dibinde kök duvarı kümeleri (derinlik + doku)
+	var wall_spots: Array[Vector3] = []
+	for bd: AABB in _backdrops:
+		if bd.size.x < 4.0:
+			continue
+		var x := bd.position.x + 3.0
+		while x < bd.end.x - 3.0:
+			wall_spots.append(Vector3(x, maxf(bd.position.y, floor_y - 0.5), bd.end.z + 0.15))
+			x += _rng.randf_range(6.0, 11.0)
+	_shuffle(wall_spots)
+	for n in mini(max_wall_pieces, wall_spots.size()):
+		_model(M_WALL, &"wall", wall_spots[n], _rng.randf_range(-0.15, 0.15), _rng.randf_range(0.7, 1.0), &"none")
+	for box: AABB in floors.slice(0, 2):
+		_model(M_ROCK_S, &"rock", Vector3(_rng.randf_range(box.position.x + 1.0, box.end.x - 1.0), box.end.y,
+				clampf(box.position.z + 0.5, -1.8, -1.0)), _rng.randf() * TAU, _rng.randf_range(0.6, 1.0), &"none")
+
+
+## Zemin kutusunun üstünü kök/yosun karolarıyla kaplar (x boyunca ölçeklenen 4 m karolar).
+## Küçük süzülen platformlar (≤ 3.2 m) ise altından kök sarkan 2 m platform modeliyle giydirilir.
+func _skin_floor(box: AABB) -> void:
+	if box.size.x <= 3.2 and box.size.y <= 1.2 and ResourceLoader.exists(M_PLATFORM_S):
+		var pm := _model(M_PLATFORM_S, &"platform", Vector3(box.get_center().x, 0.0, box.get_center().z), 0.0, 1.0, &"none")
+		if pm != null:
+			var h := _model_height(M_PLATFORM_S)
+			pm.scale = Vector3(box.size.x / 2.0, 1.0, box.size.z / 1.55)
+			pm.position.y = box.end.y + 0.03 - h
+		return
+	if not ResourceLoader.exists(M_FLOOR):
+		return
+	var n := maxi(1, int(round(box.size.x / 4.0)))
+	var sx := box.size.x / (n * 4.0)
+	var sz := box.size.z / 4.0
+	var sy := minf(box.size.y, 1.05) / 1.05
+	for k in n:
+		if int(model_counts.get(&"floor", 0)) >= max_floor_tiles:
+			return
+		var at := Vector3(box.position.x + (k + 0.5) * 4.0 * sx, box.end.y - 1.05 * sy + 0.03, box.get_center().z)
+		# Karolar %12 üst üste biner (dikiş çizgisi kalmaz), her biri rastgele 0/180° çevrilir (tekrar kırılır)
+		var m := _model(M_FLOOR, &"floor", at, PI if _rng.randf() < 0.5 else 0.0, 1.0, &"tint", 0.0, floor_tint)
+		if m != null:
+			m.scale = Vector3(sx * 1.12, sy * _rng.randf_range(0.97, 1.03), sz)
+
+
+func _floor_height_at(b: AABB) -> float:
+	var best := b.position.y
+	for box: AABB in _boxes:
+		if box.size.x >= 4.0 and box.end.y <= b.position.y + 3.0:
+			best = maxf(best, box.end.y)
+	return best
+
+
+func _hang_model(path: String, kind: StringName, ceiling_point: Vector3, s: float) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var h := _model_height(path) * s
+	return _model(path, kind, ceiling_point + Vector3.DOWN * h, _rng.randf_range(-0.3, 0.3), s, &"hang", 0.06)
+
+
+## Model örneği + (isteğe bağlı) rüzgârlı materyal. mode: &"up" dikilen, &"hang" sarkan, &"none" katı.
+func _model(path: String, kind: StringName, at: Vector3, yaw: float, s: float, mode: StringName, strength: float = 0.06,
+		tint: Color = Color.WHITE) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var inst := (load(path) as PackedScene).instantiate() as Node3D
+	inst.position = at
+	inst.rotation.y = yaw
+	inst.scale = Vector3.ONE * s
+	add_child(inst)
+	for n: Node in inst.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if mode != &"none" else mi.cast_shadow
+		if mode == &"none":
+			continue
+		mi.material_override = _model_wind_material(path, mode, mi, strength, tint)
+		if mode != &"tint":
+			mi.add_to_group(FOLIAGE_GROUP)
+	Stylizer.apply(inst)
+	model_counts[kind] = int(model_counts.get(kind, 0)) + 1
+	return inst
+
+
+## mode &"tint": rüzgârsız, yalnız renk çarpanlı kopya.
+func _model_wind_material(path: String, mode: StringName, mi: MeshInstance3D, strength: float,
+		tint: Color = Color.WHITE) -> ShaderMaterial:
+	var key := path + String(mode)
+	if _model_wind_mats.has(key):
+		return _model_wind_mats[key]
+	var src := mi.get_active_material(0) as StandardMaterial3D
+	var std := (src.duplicate() as StandardMaterial3D) if src != null else StandardMaterial3D.new()
+	std.albedo_color = std.albedo_color * tint
+	if mode == &"tint":
+		var tm := Stylizer.stylize_material(std) as ShaderMaterial
+		_model_wind_mats[key] = tm
+		return tm
+	var a := mi.mesh.get_aabb()
+	var w := {"strength": strength, "speed": 1.4, "push": 0.45}
+	if mode == &"hang":
+		w["base"] = a.end.y
+		w["height"] = -a.size.y
+	else:
+		w["base"] = a.position.y
+		w["height"] = a.size.y
+	std.set_meta(Stylizer.META_WIND, w)
+	var sm := Stylizer.stylize_material(std) as ShaderMaterial
+	_wind_mats.append(sm)
+	_model_wind_mats[key] = sm
+	return sm
+
+
+static var _height_cache: Dictionary = {}
+
+
+static func _model_height(path: String) -> float:
+	if _height_cache.has(path):
+		return _height_cache[path]
+	var inst := (load(path) as PackedScene).instantiate() as Node3D
+	var h: float = (ModelValidator.measure(inst)["aabb"] as AABB).size.y
+	inst.free()
+	_height_cache[path] = h
+	return h
+
+
+func _shuffle(arr: Array) -> void:
+	for k in range(arr.size() - 1, 0, -1):
+		var j := _rng.randi_range(0, k)
+		var t: Variant = arr[k]
+		arr[k] = arr[j]
+		arr[j] = t
 
 
 # ---------------------------------------------------------------- Kodla üretilen örgüler (önbellekli)

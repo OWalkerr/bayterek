@@ -84,4 +84,6 @@
 | 2026-11-26 | Kocabaş eğitim odası Kök Ağzı'nda (oyun alanının arkasında, oyuncuyu izler) | docs/01: tutorial'da Alpay Kocabaş ile oynar; Ocak Odası'na konsaydı yakalanma hikayesiyle çelişirdi |
 | 2026-11-26 | Yerel sis: billboard puf öbekleri, oyuncu geçince dağılır ve yavaşça toplanır | Kullanıcı isteği ("içinden geçince dağılsın, yumuşak his"); FogVolume web'de yok |
 | 2026-11-26 | Bitki rüzgârı stilize shader'da (köşe), oyuncu itişi odaya tek nokta ile | Ayrı shader yok → bitkiler de aynı ışık ailesinde; maliyet: oda başına bir uniform yazımı |
+| 2026-11-26 | Alpay modeli kullanıcının yeni Mixamo FBX'i ile değişti (animasyonlar aynı) | Kullanıcı: eski model "poposu açık gibi" duruyordu; yeni model daha iyi. Kemik adları aynı → 13 klip yeniden üretmeden geçti |
+| 2026-11-26 | Çevre seti otomatik yerleşir (RoomDressing), greybox kutular model karolarla kaplanır | 15 oda elle giydirilmeden "son görünüm"e yaklaşır; yeni model gelince tek satırla devreye girer |
 | 2026-11-26 | Kapan Çiçek ve Kök Yılanı Spor Mahzeni'ne eklendi | Model geldi, docs/04 tasarımı vardı; botların geçtiği odalar değişmesin diye bu oda seçildi |

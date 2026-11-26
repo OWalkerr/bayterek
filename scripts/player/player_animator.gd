@@ -324,7 +324,7 @@ func get_root_offset(clip: StringName) -> float:
 ## Mixamo "Without Skin" kliplerini modelin AnimationPlayer'ına "ext/<ad>" olarak ekler.
 ## - İz yolları modelin iskeletine yönlendirilir (…/Skeleton3D:kemik)
 ## - Konum izleri iskelet ölçeğine (kalça dinlenme boyu oranı, Tripo ×1.6) ölçeklenir
-## - Kaynak iskeleti Y-yukarı değilse (ör. "With Skin" indirilmiş FBX) atlanır
+## - Kaynak iskeleti Z-yukarıysa (ör. "With Skin" indirilmiş FBX) kalça izleri +Y'ye döndürülür
 ## Dönüş izleri kemik yerel pozudur → aynı Mixamo hiyerarşisinde doğrudan geçer.
 func _load_external_clips() -> void:
 	if external_dir.is_empty() or not DirAccess.dir_exists_absolute(external_dir):
@@ -355,10 +355,17 @@ func _load_external_clips() -> void:
 			continue
 		var src_hips := src_skel.find_bone(root_bone)
 		var src_rest := src_skel.get_bone_rest(src_hips).origin if src_hips >= 0 else Vector3.UP
+		# "With Skin" FBX: iskeletin dinlenme pozu Z-yukarı gelir ama klip anahtarları Y-yukarıdır
+		# (ölçüldü: dinlenme kalçası z=0.51, anahtar y=0.47). Ölçek oranı için kalça boyu ilk anahtardan alınır.
+		var fix := Quaternion()
 		if src_rest.y < src_rest.length() * 0.7:
-			push_warning("Animasyon atlandı (iskelet Y-yukarı değil — 'Without Skin' indir): %s" % f)
-			inst.free()
-			continue
+			var first := src_player.get_animation(src_player.get_animation_list()[0])
+			var ht := _find_bone_track(first, root_bone)
+			if ht < 0:
+				push_warning("Animasyon atlandı (iskelet Y-yukarı değil, kalça izi yok): %s" % f)
+				inst.free()
+				continue
+			src_rest = first.track_get_key_value(ht, 0) as Vector3
 		var ratio := model_hips_h / maxf(src_rest.y, 0.001)
 		var anim := src_player.get_animation(src_player.get_animation_list()[0]).duplicate(true) as Animation
 		for t in range(anim.get_track_count() - 1, -1, -1):
@@ -372,9 +379,16 @@ func _load_external_clips() -> void:
 				anim.remove_track(t)
 				continue
 			anim.track_set_path(t, NodePath("%s:%s" % [skel_path, bone]))
+			var is_hips := bone == root_bone
 			if anim.track_get_type(t) == Animation.TYPE_POSITION_3D:
 				for k in anim.track_get_key_count(t):
-					anim.track_set_key_value(t, k, (anim.track_get_key_value(t, k) as Vector3) * ratio)
+					var v := anim.track_get_key_value(t, k) as Vector3
+					if is_hips:
+						v = fix * v
+					anim.track_set_key_value(t, k, v * ratio)
+			elif anim.track_get_type(t) == Animation.TYPE_ROTATION_3D and is_hips and fix != Quaternion():
+				for k in anim.track_get_key_count(t):
+					anim.track_set_key_value(t, k, fix * (anim.track_get_key_value(t, k) as Quaternion))
 			elif anim.track_get_type(t) == Animation.TYPE_SCALE_3D:
 				anim.remove_track(t)
 		lib.add_animation(logical, anim)
