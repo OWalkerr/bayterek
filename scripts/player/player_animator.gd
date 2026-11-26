@@ -12,6 +12,17 @@ const LAND_TIME: float = 0.12
 
 ## mantıksal ad -> modeldeki klip adı (boşsa mantıksal adın kendisi aranır)
 @export var clip_map: Dictionary = {}
+## Döngülü oynatılacak mantıksal durumlar (Tripo/Mixamo klipleri döngüsüz gelebiliyor).
+@export var looping: Array[StringName] = [&"idle", &"run", &"fall", &"swing", &"climb_up", &"climb_idle", &"heal"]
+## Kökü (Hips) ileri taşıyan klipler "yerinde" oynatılır: yatay kök hareketi silinir, dikey sekme kalır
+## (hareketi kod yönetir — docs/07 §5 "root motion kapalı").
+@export var in_place: Array[StringName] = [&"run"]
+@export var root_bone: String = "mixamorig_Hips"
+## Koşu klibinin doğal hızı (m/s); oynatma hızı = oyuncu hızı / bu (klipten ölçülür, yoksa bu değer).
+@export var run_clip_speed: float = 3.5
+@export var run_speed_scale_range: Vector2 = Vector2(0.6, 2.2)
+## Klibi olmayan durumda modelde oynatılacak yedek klip (+ yordamsal poz).
+@export var fallback_clip: StringName = &"idle"
 @export var blend_time: float = 0.12
 @export var run_lean_deg: float = 8.0
 @export var bob_amount: float = 0.05
@@ -43,6 +54,8 @@ func _ready() -> void:
 			if c != null:
 				c.visible = false
 		model_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if model_player != null:
+		_prepare_clips()
 	# Klip yoksa yordamsal poz modele (yoksa kapsüle) uygulanır
 	_body = model if model != null else capsule
 	if _body != null:
@@ -92,8 +105,22 @@ func _process(delta: float) -> void:
 	if next != current:
 		current = next
 		_play_model(next)
+	if model_player != null:
+		# Koşu klibi oyuncu hızına eşlenir (ayak kayması azalır)
+		if current == &"run" and _model_has_clip(&"run"):
+			var speed := Vector2(player.velocity.x, player.velocity.z).length()
+			model_player.speed_scale = clampf(speed / maxf(run_clip_speed, 0.1),
+					run_speed_scale_range.x, run_speed_scale_range.y)
+		else:
+			model_player.speed_scale = 1.0
 	if not _model_has_clip(current) and _body != null:
 		_procedural(delta)
+	elif _body != null and model != null:
+		# Klip oynarken yordamsal pozu yumuşakça sıfırla
+		var k := minf(1.0, 14.0 * delta)
+		_body.scale = _body.scale.lerp(_base_scale, k)
+		_body.rotation = _body.rotation.lerp(Vector3.ZERO, k)
+		_body.position = _body.position.lerp(_base_pos, k)
 
 
 ## Yordamsal pozun uygulandığı düğüm (model ya da kapsül).
@@ -109,8 +136,54 @@ func _play_model(anim: StringName) -> void:
 	if model_player == null:
 		return
 	var clip: StringName = clip_map.get(anim, anim)
-	if model_player.has_animation(clip):
+	if not model_player.has_animation(clip):
+		clip = clip_map.get(fallback_clip, fallback_clip)
+	if model_player.has_animation(clip) and model_player.current_animation != clip:
 		model_player.play(clip, blend_time)
+
+
+## Şu an modelde oynayan klip (yoksa "").
+func get_playing_clip() -> StringName:
+	return StringName(model_player.current_animation) if model_player != null else &""
+
+
+## Klipleri hazırla: döngü, yerinde oynatma, koşu klibinin doğal hızını ölç.
+func _prepare_clips() -> void:
+	for logical: StringName in looping:
+		var clip: StringName = clip_map.get(logical, logical)
+		if model_player.has_animation(clip):
+			model_player.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	for logical: StringName in in_place:
+		var clip: StringName = clip_map.get(logical, logical)
+		if not model_player.has_animation(clip) or skeleton == null:
+			continue
+		var anim := model_player.get_animation(clip)
+		var track := _find_bone_track(anim, root_bone)
+		if track < 0:
+			continue
+		var n := anim.track_get_key_count(track)
+		if n < 2:
+			continue
+		var first: Vector3 = anim.track_get_key_value(track, 0)
+		var last: Vector3 = anim.track_get_key_value(track, n - 1)
+		var travel := Vector2(last.x - first.x, last.z - first.z).length()
+		if logical == &"run" and travel > 0.01 and anim.length > 0.0:
+			# Klibin doğal hızı (model ölçeğiyle): oynatma hızını oyuncu hızına eşlemek için
+			run_clip_speed = travel / anim.length   # import root_scale izlere de uygulanır → metre
+		for i in n:
+			var v: Vector3 = anim.track_get_key_value(track, i)
+			anim.track_set_key_value(track, i, Vector3(first.x, v.y, first.z))
+
+
+func _find_bone_track(anim: Animation, bone: String) -> int:
+	for t in anim.get_track_count():
+		if anim.track_get_type(t) != Animation.TYPE_POSITION_3D:
+			continue
+		var path := String(anim.track_get_path(t))
+		if path.ends_with(":" + bone):
+			return t
+	return -1
 
 
 ## Kapsül greybox animasyonu: okunur poz farkları (docs/07 model gelene kadar).

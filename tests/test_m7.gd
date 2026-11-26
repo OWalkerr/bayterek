@@ -209,6 +209,17 @@ func _test_player_model() -> void:
 	var r := ModelValidator.validate_scene(model, "char_alpay_tripo.glb")
 	_check("model: oyundaki Alpay ölçüsü doğru (1.6 m, +Z, bütçe)", r["ok"], ModelValidator.format_report(r))
 	_check("model: stilize shader'a çevrildi", _count_unstylized(model) == 0, "")
+	var ap := anim.model_player
+	_check("model: idle + run klipleri, döngülü", ap != null and ap.has_animation(&"idle") and ap.has_animation(&"run") \
+			and ap.get_animation(&"run").loop_mode == Animation.LOOP_LINEAR and ap.get_animation(&"idle").loop_mode == Animation.LOOP_LINEAR, "")
+	if ap != null and ap.has_animation(&"run"):
+		var run := ap.get_animation(&"run")
+		var t := run.find_track(NodePath("Armature/Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+		var a: Vector3 = run.track_get_key_value(t, 0)
+		var b: Vector3 = run.track_get_key_value(t, run.track_get_key_count(t) - 1)
+		_check("model: koşu yerinde (kök yatayda kaymıyor)", Vector2(b.x - a.x, b.z - a.z).length() < 0.001, "")
+		_check("model: koşu klibinin doğal hızı ölçüldü", anim.run_clip_speed > 2.0 and anim.run_clip_speed < 6.0,
+				"%.2f m/s" % anim.run_clip_speed)
 
 
 func _test_animator() -> void:
@@ -218,15 +229,24 @@ func _test_animator() -> void:
 	_teleport(Vector3(-6.0, 0.05, 0.0))
 	await _frames(20)
 	_check("anim: yerde duran → idle", anim.current == &"idle", str(anim.current))
+	if anim.model_player != null:
+		_check("anim: modelde idle klibi oynuyor", anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
 	Input.action_press(&"move_right")
 	await _frames(20)
 	var body := anim.get_procedural_target()
-	_check("anim: koşu → run + öne eğilme (yordamsal)", anim.current == &"run" and body.rotation.x > 0.05,
-			"%s eğim=%.2f" % [anim.current, body.rotation.x])
+	if anim.model_player != null:
+		_check("anim: koşu → modelde run klibi, hız eşlemesi", anim.current == &"run" and anim.get_playing_clip() == &"run" \
+				and anim.model_player.speed_scale > 1.2, "klip=%s hız×%.2f" % [anim.get_playing_clip(), anim.model_player.speed_scale])
+	else:
+		_check("anim: koşu → run + öne eğilme (yordamsal)", anim.current == &"run" and body.rotation.x > 0.05,
+				"%s eğim=%.2f" % [anim.current, body.rotation.x])
 	Input.action_release(&"move_right")
 	Input.action_press(&"jump")
 	await _frames(6)
 	_check("anim: zıplama → jump_up", anim.current == &"jump_up", str(anim.current))
+	if anim.model_player != null:
+		_check("anim: klibi olmayan durumda yedek klip (idle) + yordamsal poz",
+				anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
 	for i in 60:
 		await _frames(1)
 		if _player.velocity.y < -1.0:

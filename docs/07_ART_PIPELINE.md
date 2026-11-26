@@ -80,7 +80,9 @@
 ### Tripo çıktısı — bilinen durumlar (Alpay'dan öğrenilen, 2026-11-25)
 - **Ölçek:** Tripo modeli **1 birim yüksekliğe normalize** ederek dışa aktarır → Godot'da `.glb.import` içinde `nodes/root_scale` = gerçek boy (Alpay: **1.6**). Blender gerekmez; `model_check` boyu doğrular.
 - **Yön:** iskelet −90° döndürülmüş bir ara düğümün (`node_0`) altında; sonuç +Z'ye bakıyor (doğru). `ModelValidator` artık üst düğüm dönüşlerini hesaba katıyor.
-- **İskelet:** Mixamo adları (`mixamorig_*`, 55 kemik) → Mixamo animasyonları doğrudan uyar. Dosyada animasyon klibi yok (Mixamo'dan gelecek).
+- **İskelet:** Mixamo adları (`mixamorig_*`) → Mixamo animasyonları doğrudan uyar.
+- **Tripo animasyonlu dışa aktarım (2026-11-26):** Tripo'nun hazır animasyonlarıyla (idle, run) indirilen GLB aynı mesh + 65 kemik + klipler içerir; oyunda bu dosya kullanılıyor (`char_alpay_tripo.glb`). Klipler **döngüsüz** ve koşu **kök hareketli** (Hips ≈ 2.8 m ileri) gelir → `PlayerAnimator` çalışma zamanında döngüyü açar, kökün yatay hareketini siler (yerinde), koşu klibinin doğal hızını ölçer (3.56 m/s) ve oynatma hızını oyuncu hızına eşler (7 m/s → ×1.96). Klibi olmayan durumlar `idle` + yordamsal poz ile oynar.
+- **Yeni klip eklemek:** Tripo'da başka hazır animasyon (jump, climb …) seçip yeniden dışa aktar → aynı adla yükle; ya da Mixamo FBX'leri `anims/`'e. Klip adları mantıksal adlardan farklıysa `PlayerAnimator.clip_map`.
 - Alpay: 18 988 üçgen, 1 materyal, 2048 doku — bütçe içinde. Meshy kıyas modeli (`char_alpay_meshy.glb`, 10k üçgen, 1.7 m, Running/Walking klipli) referans olarak repoda kalır, web build'den hariç (`*_meshy.glb`).
 
 ### Üretim akışı (her model)
