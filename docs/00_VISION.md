@@ -88,4 +88,6 @@
 | 2026-11-26 | Çevre seti otomatik yerleşir (RoomDressing), greybox kutular model karolarla kaplanır | 15 oda elle giydirilmeden "son görünüm"e yaklaşır; yeni model gelince tek satırla devreye girer |
 | 2026-11-26 | Sarkan kök modelleri yalnız süs (tutunulmaz); tutunulan sarmaşıklar kendi görünüşünde kalır | Kullanıcı kararı: oyuncu neye tutunabileceğini görünüşten okusun |
 | 2026-11-26 | Parallax gerçek 3D düzlemlerle; dikeyde katmanlar kamerayı kısmen izler | Yatay parallax kodsuz doğar; dikey izleme sayesinde görsellerin kompozisyonu yüksek odalarda da korunur |
+| 2026-11-26 | Greybox kutularına kodla üretilen dikişsiz taş/kök dokusu (üç düzlemli, kutu renginde) | Kullanıcı: "haritada hâlâ küpler var"; yeni model beklemeden her kutu yüzü dokulu, renk paleti korunur |
+| 2026-11-26 | Oyun hissi paketi: Juice autoload (ses + sarsıntı + titreşim), tepe asılması, köşe düzeltme, adım/zıplama tozu, sallanma hız izi; sesler şimdilik kodla sentez | Kullanıcı: "oynanış hissinde çok eksik var"; oyunda hiç ses ve sarsıntı yoktu. Dosya gelince aynı adla değişir |
 | 2026-11-26 | Kapan Çiçek ve Kök Yılanı Spor Mahzeni'ne eklendi | Model geldi, docs/04 tasarımı vardı; botların geçtiği odalar değişmesin diye bu oda seçildi |

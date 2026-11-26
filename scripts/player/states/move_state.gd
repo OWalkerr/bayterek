@@ -58,6 +58,7 @@ func physics_update(delta: float) -> void:
 		p.coyote_timer = 0.0
 		p.jump_held = true
 		on_floor = false
+		p.on_ground_jump()
 
 	# Asimetrik yerçekimi
 	if not on_floor:
@@ -71,7 +72,11 @@ func physics_update(delta: float) -> void:
 	if p.velocity.y <= 0.0:
 		p.jump_held = false
 
+	var pre_velocity := p.velocity
 	p.move_and_slide()
+	p.try_corner_correction(pre_velocity, delta)
+	if p.is_on_floor():
+		p.update_footsteps(delta)
 
 	# Güvenli nokta yalnızca gerçek bir hareket sonrası zemindeyken güncellenir
 	# (ışınlanma sonrası bayat is_on_floor değerine güvenilmez).

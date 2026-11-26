@@ -45,7 +45,8 @@ res://
 | `SceneRouter` | Oda yükleme/boşaltma, kapı geçişleri (karartma + arka planda yükleme), Ocak dinlenmesi, son Ocak'ta dirilme — M4 |
 | `TimeScale` | Zaman ölçeği aracısı: hit-stop + kamera geçiş yavaşlaması (en küçük ölçek kazanır) — M3 |
 | `PhantomCameraManager` | Phantom Camera eklentisinin autoload'u (eklenti kendi ister) — M3 |
-| `CameraDirector` | Aktif kamera modu, geçişler, girdi sürekliliği, oda sınırları; CameraRig'i yönetir |
+| `CameraDirector` | Aktif kamera modu, geçişler, girdi sürekliliği, oda sınırları, ekran sarsıntısı (`shake`); CameraRig'i yönetir |
+| `Juice` | Oyun hissi: EventBus olaylarını dinler → ses (SfxBank), ekran sarsıntısı, kol titreşimi; sallanma rüzgârı döngüsü — 2026-11-26 |
 | `CutsceneDirector` | Sinematik oynatma, giriş kilitleme, letterbox |
 | `AudioDirector` | Bölge müziği katmanları, crossfade, SFX havuzu |
 | `Settings` | Grafik, ses, kontrol ayarları (`user://settings.cfg`) |

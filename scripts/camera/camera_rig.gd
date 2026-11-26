@@ -47,6 +47,13 @@ const PHANTOM_BACKEND_PATH: String = "res://scripts/camera/phantom_camera_backen
 @export_group("Takip")
 @export var follow_smoothing: float = 6.0
 
+@export_group("Sarsıntı")
+## Travma modeli: sarsıntı = travma², travma saniyede `shake_decay` azalır (docs/05 §sarsıntı).
+## Kamera dönüşümüne değil Camera3D h/v_offset'ine uygulanır → iki arka uçta da çalışır.
+@export var shake_max_offset: float = 0.35
+@export var shake_decay: float = 1.8
+@export var shake_frequency: float = 22.0
+
 var mode: Mode = Mode.SIDE
 var depth_yaw: float = 0.0
 var camera: Camera3D
@@ -64,6 +71,10 @@ var _lookahead: float = 0.0
 var _pullback: float = 0.0
 var _look_height: float = 3.0
 var _backend: Node = null
+## 0..1 sarsıntı travması (CameraDirector.shake ekler).
+var trauma: float = 0.0
+var _shake_time: float = 0.0
+var _shake_noise: FastNoiseLite = null
 
 
 func _ready() -> void:
@@ -143,6 +154,30 @@ func get_lookahead() -> float:
 
 func get_look_height() -> float:
 	return _look_height
+
+
+func add_trauma(amount: float) -> void:
+	trauma = clampf(trauma + amount, 0.0, 1.0)
+
+
+func _process(delta: float) -> void:
+	if camera == null:
+		return
+	if trauma <= 0.0:
+		camera.h_offset = 0.0
+		camera.v_offset = 0.0
+		return
+	if _shake_noise == null:
+		_shake_noise = FastNoiseLite.new()
+		_shake_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+		_shake_noise.frequency = 1.0
+	# Gerçek zamanla söner: hit-stop / yavaşlatma sırasında da sarsıntı okunur
+	var real_delta := delta / maxf(Engine.time_scale, 0.01)
+	_shake_time += real_delta * shake_frequency
+	var k := trauma * trauma * shake_max_offset
+	camera.h_offset = _shake_noise.get_noise_2d(_shake_time, 0.0) * k
+	camera.v_offset = _shake_noise.get_noise_2d(0.0, _shake_time + 100.0) * k
+	trauma = maxf(trauma - shake_decay * real_delta, 0.0)
 
 
 func is_blending() -> bool:

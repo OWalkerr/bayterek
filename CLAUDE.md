@@ -39,6 +39,7 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn            # M
 godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn            # M5 bölge, kanca, kapı matrisi, sır, Öz/iyileşme
 godot --headless --fixed-fps 60 --path . res://tests/test_m6.tscn            # M6 Kökyiyen + bot dövüş denemeleri (TRIALS=5 HIT_LOG=1)
 godot --headless --fixed-fps 60 --path . res://tests/test_m7.tscn            # M7 stilize shader, Stylizer, palet, model doğrulayıcı, animatör
+godot --headless --fixed-fps 60 --path . res://tests/test_feel.tscn          # oyun hissi: ses, sarsıntı, tepe asılması, köşe düzeltme, kutu dokusu
 godot --headless --path . res://tests/model_check.tscn                       # assets/models altındaki AI modellerini denetle
 python3 tools/gen_rooms.py                                                   # oda .tscn'lerini tablodan üret
 BAYTEREK_CAMERA_BACKEND=rig godot --headless --fixed-fps 60 --path . res://tests/test_m3.tscn   # yedek kamera arka ucu

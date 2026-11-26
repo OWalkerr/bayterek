@@ -6,6 +6,9 @@
 //  - vuruş parlaması (flash) — düşman/boss isabet geri bildirimi
 //  - rüzgâr (wind_strength > 0): yerel yüksekliğe göre artan salınım + oyuncunun yanından geçerken
 //    yana eğilme (push_origin, FoliageField her kare yazar). Bitki/dal örgüleri için (docs/08 §ortam).
+//  - dünya uzayında üç düzlemli doku (use_triplanar): greybox kutularının yüzleri UV'siz, ölçek
+//    bağımsız kök/kaya dokusu alır; kutu rengi dokunun parlaklığıyla çarpılır (docs/07 §6.1).
+//    İki ölçekte örneklenir (tekrar deseni görünmesin).
 // Compatibility (web) ve Forward+ ile uyumlu: yalnızca standart spatial + light() kullanır.
 shader_type spatial;
 render_mode cull_back;
@@ -40,7 +43,20 @@ uniform vec3 push_origin = vec3(0.0, -1000.0, 0.0);
 uniform float push_radius = 1.4;
 uniform float push_strength = 0.5;
 
+uniform bool use_triplanar = false;
+// Doku tekrarı (1/m): 0.25 = her 4 m'de bir.
+uniform float triplanar_scale = 0.25;
+// 0 = yalnız kutu rengi × doku parlaklığı, 1 = dokunun kendi rengi.
+uniform float triplanar_color_mix : hint_range(0.0, 1.0) = 0.0;
+// Doku parlaklığının kutu rengine etkisi (0 = düz renk, 1 = doku gri tonu olduğu gibi).
+uniform float triplanar_contrast = 1.0;
+
+varying vec3 v_world_pos;
+varying vec3 v_world_normal;
+
 void vertex() {
+	v_world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	v_world_normal = normalize(mat3(MODEL_MATRIX) * NORMAL);
 	if (wind_strength > 0.0) {
 		float h = clamp((VERTEX.y - wind_base) / wind_height, 0.0, 1.0);
 		h *= h;
@@ -62,7 +78,19 @@ void vertex() {
 
 void fragment() {
 	vec3 c = albedo.rgb;
-	if (use_texture) {
+	if (use_triplanar) {
+		vec3 w = pow(abs(v_world_normal), vec3(4.0));
+		w /= (w.x + w.y + w.z);
+		vec3 p = v_world_pos * triplanar_scale;
+		// İki ölçek karışımı: tek dokunun tekrar deseni kırılır
+		vec3 q = p * 0.37 + vec3(0.17, 0.53, 0.31);
+		vec3 t = (texture(albedo_texture, p.zy).rgb * 0.65 + texture(albedo_texture, q.zy).rgb * 0.35) * w.x
+				+ (texture(albedo_texture, p.xz).rgb * 0.65 + texture(albedo_texture, q.xz).rgb * 0.35) * w.y
+				+ (texture(albedo_texture, p.xy).rgb * 0.65 + texture(albedo_texture, q.xy).rgb * 0.35) * w.z;
+		float tl = dot(t, vec3(0.299, 0.587, 0.114));
+		float shade = clamp(1.0 + (tl - 0.5) * triplanar_contrast, 0.3, 1.7);
+		c = mix(c * shade, t, triplanar_color_mix);
+	} else if (use_texture) {
 		c *= texture(albedo_texture, UV).rgb;
 	}
 	float luma = dot(c, vec3(0.299, 0.587, 0.114));

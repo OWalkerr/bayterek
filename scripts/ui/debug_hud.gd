@@ -35,6 +35,8 @@ func setup(target: Player, room_names: PackedStringArray) -> void:
 
 	_info = UiStyle.label("", UiStyle.FONT_SIZE_SMALL)
 	_info.position = Vector2(24.0, 86.0)
+	# Normal oyunda gizli (ekranı kirletmesin); F1 açar/kapar.
+	_info.visible = false
 	add_child(_info)
 
 	_room_title = UiStyle.label("", UiStyle.FONT_SIZE, UiStyle.SAP_GOLD)
@@ -49,6 +51,7 @@ func setup(target: Player, room_names: PackedStringArray) -> void:
 	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_timer_label.offset_top = 50.0
 	_timer_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_timer_label.visible = false
 	add_child(_timer_label)
 
 	_message = UiStyle.label("", 34, UiStyle.SAP_GOLD)
@@ -172,6 +175,7 @@ func _process(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed(&"toggle_debug"):
 		_info.visible = not _info.visible
+		_timer_label.visible = _info.visible
 	if Input.is_action_just_pressed(&"toggle_tuning"):
 		_tuning.visible = not _tuning.visible
 	if Input.is_action_just_pressed(&"anim_preview") and player.animator != null:

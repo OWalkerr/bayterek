@@ -27,6 +27,12 @@
 
 İnsansı olmayanların hepsi **kodla canlandırılıyor** (`ModelVisual.add_rotation`), klip yok.
 
+## 2b. Oyun hissi paketi (2026-11-26, dal `claude/oynanis-hissi`, PR #2'nin üstüne)
+- Kullanıcı şikâyeti: "oynanış hissinde çok eksik var, haritada hâlâ küpler var".
+- Yapılan: kutulara kodla üretilen taş/kök dokusu (docs/07 §6.1), tırmanma sarmaşığı yaprakları, `Juice` autoload + `SfxBank` (16 geçici ses), ekran sarsıntısı (docs/05), tepe asılması + köşe düzeltme (docs/03), adım/zıplama tozu, sallanma hız izi, hata ayıklama yazısı F1'de. Test: `tests/test_feel.tscn`.
+- Kullanıcıdan istenebilir: gerçek ses paketi (Kenney CC0 vb.) → `assets/audio/sfx/<ad>.ogg` (adlar `SfxBank.NAMES`); 2 dikişsiz doku (toprak/kök yan yüzü, mağara kayası). Boss arenası ve Yankı'nın büyük arka duvarı hâlâ düz dokulu duvar — arena parallax'ı (`bg_kokyiyen_arena`) bağlanabilir.
+- test_m6 bot dövüşü RNG'ye çok duyarlı (kazanma ~1/3); yeni sık efektler global RNG'yi tüketmesin diye `FxLibrary.isolate_random` kullanılır.
+
 ## 3. Bekleyen işler (sırayla)
 1. **Üçüncü teslim oyunda (2026-11-26, dal `claude/yeni-varliklar`):** parallax (`ParallaxBackdrop`), sarkan kök a/b (yalnız süs — kullanıcı kararı), mangal/meşale (`FireProp`), balbal, ruh kandili (`SpiritLantern`), Kut parçası / Öz kristali / Sunak modelleri. Ayrıntı: docs/07 "Üçüncü teslim".
    - Not: kullanıcının PC'sindeki `Masaüstü\BAYTEREK` bir git deposu değil (ZIP). Yeni varlıklar oraya konuyor → bulut oturumu cihaz klasöründen kopyalayıp PR açıyor. `Masaüstü\BAYTEREK1` ham Tripo çıktıları (eğrelti/perde ~2M üçgen, kullanılamaz).

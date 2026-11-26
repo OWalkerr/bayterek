@@ -62,6 +62,7 @@
    - 3 basamaklı ışık rampası (toon), yumuşak kenar ışığı (rim light), palet tonlama (doygunluğu bölge paletine çeker). Bu, farklı AI çıktılarını aynı aileye sokar.
    - **Elle bağlamak gerekmez:** `Stylizer.apply(düğüm)` çalışma zamanında her opak StandardMaterial3D'yi (GLB'nin kendi materyali dahil) stilize shader'a çevirir; albedo dokusu ve ışıma korunur. Odalar, oyuncu ve düşmanlar otomatik geçer.
    - Bölge tonları `RegionPalette` (`data/art/palette_kok_dibi.tres`): gölge moru, palet tonu, kenar ışığı, gökyüzü, sis, güneş. Ortam `RegionEnvironment` ile aynı paletten kurulur (web: 1 gölgeli yönlü ışık; Forward+: + SSAO + hacimsel sis).
+   - **§6.1 Greybox kutu dokusu (2026-11-26):** `GreyboxRoom.box()` / `illusion_box()` materyali `uv1_triplanar` + dünya uzayı işaretli bir gri doku taşır; Stylizer bunu shader'ın `use_triplanar` yoluna çevirir (iki ölçekte örnekleme, tekrar deseni kırılır). Doku kodla üretilir (`GreyboxRoom.skin_texture()`: dikişsiz Voronoi taş/kök plakaları, pah + oluk, 256 px); rengi kutunun kendi rengi verir. Ölçek `skin_scale` (1/m), etki `skin_contrast`; odada `skin_boxes = false` düz greybox'a döner. Gerçek dikişsiz doku (ör. 1024 px toprak/kaya) gelirse `skin_texture()` onu yükleyecek şekilde değiştirilir.
    - Rengi çalışma zamanında değişen materyaller `set_meta("no_stylize", true)` ile hariç tutulur; saydam/gölgesiz efektler zaten çevrilmez.
 
 ## 7. AI aracı seçimi ve üretim şablonları (M7)

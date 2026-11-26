@@ -17,6 +17,9 @@ Oyuncu `CharacterBody3D`; yan modda **Z ekseni 0'a kilitli**, hareket X (yatay) 
 | Coyote time | 0.12 sn | Kenardan düştükten sonra zıplama hakkı |
 | Jump buffer | 0.12 sn | Yere değmeden basılan zıplama hatırlanır |
 | Maks. düşüş hızı | 22 m/s | |
+| Tepe asılması | Zıplama tuşu basılıyken \|vy\| < 1.6 m/s ise yerçekimi × 0.55 | `apex_speed_threshold`, `apex_gravity_mult` — tepede kısa süzülme, hedefleme kolaylaşır (2026-11-26) |
+| Köşe düzeltme | Yükselirken kafa bir kenara çarparsa en çok 0.3 m yana kaydırılır, yükseliş sürer | `corner_correction` — yalnız serbest konum bulunursa (2026-11-26) |
+| Koşu adımı | Tam hızda 0.3 sn'de bir toz + ses (hız ≥ %60) | `footstep_interval`, `footstep_min_speed_ratio` |
 
 ## 2. Sarmaşık Sistemi (oyunun kalbi)
 
