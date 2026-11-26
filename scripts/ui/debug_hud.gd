@@ -151,7 +151,7 @@ func _build_room_menu() -> void:
 			"A/D hareket · Space zıpla/bırak · W/S ip kısalt-uzat, tırman\n" \
 			+ "J / sol tık kamçı (W+J yukarı, havada S+J aşağı = pogo)\n" \
 			+ "K / sağ tık kanca (Sunak'tan sonra) · L basılı iyileş · Ocak yanında W: dinlen · Tab harita\n" \
-			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning",
+			+ "R odayı baştan başlat · F1 bilgi · F2 canlı tuning · F3 animasyon önizleme",
 			UiStyle.FONT_SIZE_SMALL, UiStyle.MUSHROOM))
 	add_child(_room_menu)
 	# Sürüm etiketi (web'de hangi build'in açık olduğunu görmek için; tools/deploy_web.sh yazar)
@@ -174,6 +174,9 @@ func _process(delta: float) -> void:
 		_info.visible = not _info.visible
 	if Input.is_action_just_pressed(&"toggle_tuning"):
 		_tuning.visible = not _tuning.visible
+	if Input.is_action_just_pressed(&"anim_preview") and player.animator != null:
+		var clip := player.animator.cycle_preview()
+		flash_message("Animasyon önizleme: %s" % (clip if clip != &"" else "kapalı (normal)"), 1.5)
 	for i in _room_names.size():
 		if Input.is_action_just_pressed(StringName("room_%d" % i)):
 			room_requested.emit(i)

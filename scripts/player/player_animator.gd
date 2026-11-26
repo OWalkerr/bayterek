@@ -8,7 +8,8 @@ extends Node
 ## okunur. Visual altında AnimationPlayer'lı bir model varsa `clip_map` ile adları eşleyip onu oynatır
 ## (Mixamo klip adları farklıysa clip_map'i düzenle; eşleşmeyen durum yordamsal kalır).
 
-const LAND_TIME: float = 0.12
+## Dış animasyon dosyaları: <klasör>/anim_alpay_<mantıksal ad>.fbx (Mixamo "Without Skin").
+const EXTERNAL_LIBRARY: StringName = &"ext"
 
 ## mantıksal ad -> modeldeki klip adı (boşsa mantıksal adın kendisi aranır)
 @export var clip_map: Dictionary = {}
@@ -16,13 +17,28 @@ const LAND_TIME: float = 0.12
 @export var looping: Array[StringName] = [&"idle", &"run", &"fall", &"swing", &"climb_up", &"climb_idle", &"heal"]
 ## Kökü (Hips) ileri taşıyan klipler "yerinde" oynatılır: yatay kök hareketi silinir, dikey sekme kalır
 ## (hareketi kod yönetir — docs/07 §5 "root motion kapalı").
-@export var in_place: Array[StringName] = [&"run"]
+@export var in_place: Array[StringName] = [&"run", &"death", &"land", &"whip_attack_1", &"whip_attack_2",
+		&"whip_attack_3", &"jump_up", &"hurt", &"climb_up"]
 @export var root_bone: String = "mixamorig_Hips"
 ## Koşu klibinin doğal hızı (m/s); oynatma hızı = oyuncu hızı / bu (klipten ölçülür, yoksa bu değer).
 @export var run_clip_speed: float = 3.5
 @export var run_speed_scale_range: Vector2 = Vector2(0.6, 2.2)
 ## Klibi olmayan durumda modelde oynatılacak yedek klip (+ yordamsal poz).
 @export var fallback_clip: StringName = &"idle"
+## Mixamo klasörü (boşsa dış klip yüklenmez). Dosya adı → mantıksal ad: anim_alpay_run.fbx → run.
+@export_dir var external_dir: String = "res://assets/models/characters/alpay/anims"
+@export var external_prefix: String = "anim_alpay_"
+## Dış klip, modelin kendi klibinden (Tripo idle/run) öncelikli mi?
+@export var prefer_external: bool = true
+## Tek seferlik kliplerin oyundaki hedef süresi (sn): Mixamo klipleri oyunun ritminden uzun
+## (ör. kılıç vuruşu 1.5 sn, kamçı 0.26 sn) → oynatma hızı = klip süresi / hedef.
+@export var target_lengths: Dictionary = {
+	&"whip_attack_1": 0.45, &"whip_attack_2": 0.45, &"whip_attack_3": 0.5,
+	&"whip_up": 0.45, &"whip_down": 0.45, &"swing_attack": 0.45,
+	&"jump_up": 0.5, &"land": 0.3, &"hurt": 0.45, &"death": 1.4,
+}
+## Yere inişte "land" pozunun süresi.
+@export var land_time: float = 0.25
 @export var blend_time: float = 0.12
 @export var run_lean_deg: float = 8.0
 @export var bob_amount: float = 0.05
@@ -33,6 +49,10 @@ var current: StringName = &"idle"
 var model_player: AnimationPlayer = null
 ## Visual/Model (AI modeli) — yoksa null (kapsül greybox).
 var model: Node3D = null
+## Hata ayıklama önizlemesi (F3): boş değilse durum yerine bu klip oynar.
+var preview_clip: StringName = &""
+## Yüklenen dış klipler (mantıksal ad listesi) — testler ve önizleme için.
+var external_clips: Array[StringName] = []
 
 var _body: Node3D
 var _was_on_floor: bool = true
@@ -55,6 +75,7 @@ func _ready() -> void:
 				c.visible = false
 		model_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if model_player != null:
+		_load_external_clips()
 		_prepare_clips()
 	# Klip yoksa yordamsal poz modele (yoksa kapsüle) uygulanır
 	_body = model if model != null else capsule
@@ -98,19 +119,22 @@ func _process(delta: float) -> void:
 	_time += delta
 	var on_floor := player.state == Player.State.GROUND
 	if on_floor and not _was_on_floor:
-		_land_timer = LAND_TIME
+		_land_timer = land_time
 	_was_on_floor = on_floor
 	_land_timer = maxf(_land_timer - delta, 0.0)
-	var next := pick_animation()
+	var next := pick_animation() if preview_clip == &"" else preview_clip
 	if next != current:
 		current = next
 		_play_model(next)
 	if model_player != null:
-		# Koşu klibi oyuncu hızına eşlenir (ayak kayması azalır)
+		# Koşu klibi oyuncu hızına eşlenir (ayak kayması azalır); tek seferlikler hedef süreye
 		if current == &"run" and _model_has_clip(&"run"):
 			var speed := Vector2(player.velocity.x, player.velocity.z).length()
 			model_player.speed_scale = clampf(speed / maxf(run_clip_speed, 0.1),
 					run_speed_scale_range.x, run_speed_scale_range.y)
+		elif target_lengths.has(current) and _model_has_clip(current):
+			var clip_len := model_player.get_animation(_clip_name(current)).length
+			model_player.speed_scale = maxf(clip_len / float(target_lengths[current]), 1.0)
 		else:
 			model_player.speed_scale = 1.0
 	if not _model_has_clip(current) and _body != null:
@@ -128,18 +152,36 @@ func get_procedural_target() -> Node3D:
 	return _body
 
 
+## Mantıksal ad → AnimationPlayer'daki tam ad (dış kütüphane "ext/<ad>" öncelikli).
+func _clip_name(anim: StringName) -> StringName:
+	if clip_map.has(anim):
+		return clip_map[anim]
+	if model_player != null:
+		var ext := StringName("%s/%s" % [EXTERNAL_LIBRARY, anim])
+		if prefer_external and model_player.has_animation(ext):
+			return ext
+		if model_player.has_animation(anim):
+			return anim
+		if model_player.has_animation(ext):
+			return ext
+	return anim
+
+
 func _model_has_clip(anim: StringName) -> bool:
-	return model_player != null and model_player.has_animation(clip_map.get(anim, anim))
+	return model_player != null and model_player.has_animation(_clip_name(anim))
 
 
 func _play_model(anim: StringName) -> void:
 	if model_player == null:
 		return
-	var clip: StringName = clip_map.get(anim, anim)
+	var clip := _clip_name(anim)
 	if not model_player.has_animation(clip):
-		clip = clip_map.get(fallback_clip, fallback_clip)
-	if model_player.has_animation(clip) and model_player.current_animation != clip:
-		model_player.play(clip, blend_time)
+		clip = _clip_name(fallback_clip)
+	if model_player.has_animation(clip):
+		if model_player.current_animation != clip:
+			model_player.play(clip, blend_time)
+		elif not model_player.get_animation(clip).loop_mode == Animation.LOOP_LINEAR:
+			model_player.seek(0.0, true)   # tek seferlik klip yeniden (ör. kombo vuruşu)
 
 
 ## Şu an modelde oynayan klip (yoksa "").
@@ -150,15 +192,20 @@ func get_playing_clip() -> StringName:
 ## Klipleri hazırla: döngü, yerinde oynatma, koşu klibinin doğal hızını ölç.
 func _prepare_clips() -> void:
 	for logical: StringName in looping:
-		var clip: StringName = clip_map.get(logical, logical)
-		if model_player.has_animation(clip):
-			model_player.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+		for clip: StringName in [StringName(logical), StringName("%s/%s" % [EXTERNAL_LIBRARY, logical])]:
+			if model_player.has_animation(clip):
+				model_player.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var targets: Array = []
 	for logical: StringName in in_place:
-		var clip: StringName = clip_map.get(logical, logical)
-		if not model_player.has_animation(clip) or skeleton == null:
+		for clip: StringName in [StringName(logical), StringName("%s/%s" % [EXTERNAL_LIBRARY, logical])]:
+			if model_player.has_animation(clip):
+				targets.append([logical, clip])
+	for pair: Array in targets:
+		var logical: StringName = pair[0]
+		var anim := model_player.get_animation(pair[1])
+		if skeleton == null:
 			continue
-		var anim := model_player.get_animation(clip)
 		var track := _find_bone_track(anim, root_bone)
 		if track < 0:
 			continue
@@ -168,7 +215,7 @@ func _prepare_clips() -> void:
 		var first: Vector3 = anim.track_get_key_value(track, 0)
 		var last: Vector3 = anim.track_get_key_value(track, n - 1)
 		var travel := Vector2(last.x - first.x, last.z - first.z).length()
-		if logical == &"run" and travel > 0.01 and anim.length > 0.0:
+		if logical == &"run" and travel > 0.01 and anim.length > 0.0 and pair[1] == _clip_name(&"run"):
 			# Klibin doğal hızı (import root_scale izlere de uygulanır → metre)
 			run_clip_speed = travel / anim.length
 		# Yerinde: ileri kayma eğilimi (ilk→son doğrusal) çıkarılır ve kalça yatayda iskeletin
@@ -208,6 +255,87 @@ func get_root_offset(clip: StringName) -> float:
 		var v: Vector3 = anim.track_get_key_value(track, i)
 		sum += Vector2(v.x - rest.x, v.z - rest.z)
 	return (sum / float(n)).length()
+
+
+## Mixamo "Without Skin" kliplerini modelin AnimationPlayer'ına "ext/<ad>" olarak ekler.
+## - İz yolları modelin iskeletine yönlendirilir (…/Skeleton3D:kemik)
+## - Konum izleri iskelet ölçeğine (kalça dinlenme boyu oranı, Tripo ×1.6) ölçeklenir
+## - Kaynak iskeleti Y-yukarı değilse (ör. "With Skin" indirilmiş FBX) atlanır
+## Dönüş izleri kemik yerel pozudur → aynı Mixamo hiyerarşisinde doğrudan geçer.
+func _load_external_clips() -> void:
+	if external_dir.is_empty() or not DirAccess.dir_exists_absolute(external_dir):
+		return
+	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skeleton == null:
+		return
+	var anim_root := model_player.get_node(model_player.root_node)
+	var skel_path := String(anim_root.get_path_to(skeleton))
+	var hips := skeleton.find_bone(root_bone)
+	var model_hips_h := skeleton.get_bone_rest(hips).origin.y if hips >= 0 else 1.0
+	var lib := AnimationLibrary.new()
+	for file: String in DirAccess.get_files_at(external_dir):
+		var f := file.trim_suffix(".remap").trim_suffix(".import")
+		if not f.begins_with(external_prefix) or not f.to_lower().ends_with(".fbx") or lib.has_animation(StringName(f)):
+			continue
+		var logical := StringName(f.get_basename().trim_prefix(external_prefix))
+		if lib.has_animation(logical):
+			continue
+		var packed := load(external_dir.path_join(f)) as PackedScene
+		if packed == null:
+			continue
+		var inst := packed.instantiate()
+		var src_player := inst.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		var src_skel := inst.find_child("Skeleton3D", true, false) as Skeleton3D
+		if src_player == null or src_skel == null or src_player.get_animation_list().is_empty():
+			inst.free()
+			continue
+		var src_hips := src_skel.find_bone(root_bone)
+		var src_rest := src_skel.get_bone_rest(src_hips).origin if src_hips >= 0 else Vector3.UP
+		if src_rest.y < src_rest.length() * 0.7:
+			push_warning("Animasyon atlandı (iskelet Y-yukarı değil — 'Without Skin' indir): %s" % f)
+			inst.free()
+			continue
+		var ratio := model_hips_h / maxf(src_rest.y, 0.001)
+		var anim := src_player.get_animation(src_player.get_animation_list()[0]).duplicate(true) as Animation
+		for t in range(anim.get_track_count() - 1, -1, -1):
+			var path := String(anim.track_get_path(t))
+			var colon := path.find(":")
+			if colon < 0:
+				anim.remove_track(t)
+				continue
+			var bone := path.substr(colon + 1)
+			if skeleton.find_bone(bone) < 0:
+				anim.remove_track(t)
+				continue
+			anim.track_set_path(t, NodePath("%s:%s" % [skel_path, bone]))
+			if anim.track_get_type(t) == Animation.TYPE_POSITION_3D:
+				for k in anim.track_get_key_count(t):
+					anim.track_set_key_value(t, k, (anim.track_get_key_value(t, k) as Vector3) * ratio)
+			elif anim.track_get_type(t) == Animation.TYPE_SCALE_3D:
+				anim.remove_track(t)
+		lib.add_animation(logical, anim)
+		external_clips.append(logical)
+		inst.free()
+	if not external_clips.is_empty():
+		if model_player.has_animation_library(EXTERNAL_LIBRARY):
+			model_player.remove_animation_library(EXTERNAL_LIBRARY)
+		model_player.add_animation_library(EXTERNAL_LIBRARY, lib)
+
+
+## Önizleme (F3): yüklü tüm klipler arasında döner; sonda normal moda döner.
+func cycle_preview() -> StringName:
+	var names: Array[StringName] = []
+	for c: StringName in external_clips:
+		names.append(c)
+	if model_player != null:
+		for a: StringName in model_player.get_animation_list():
+			if not String(a).begins_with(String(EXTERNAL_LIBRARY) + "/") and not names.has(a):
+				names.append(a)
+	if names.is_empty():
+		return &""
+	var i := names.find(preview_clip)
+	preview_clip = names[i + 1] if i + 1 < names.size() else &""
+	return preview_clip
 
 
 func _find_bone_track(anim: Animation, bone: String) -> int:

@@ -20,6 +20,7 @@ func _enter_tree() -> void:
 	_add_action("toggle_debug", [KEY_F1], [], [])
 	# Geliştirme kısayolları (greybox test odaları + canlı tuning); web test build'inde kalır.
 	_add_action("toggle_tuning", [KEY_F2], [], [])
+	_add_action("anim_preview", [KEY_F3], [], [])
 	_add_action("restart_room", [KEY_R], [], [])
 	_add_action("room_0", [KEY_0], [], [])
 	_add_action("room_1", [KEY_1], [], [])

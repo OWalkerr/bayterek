@@ -27,7 +27,7 @@ func _run() -> void:
 	await _test_enemy_flash()
 	_test_environment()
 	_test_validator()
-	_test_player_model()
+	await _test_player_model()
 	await _test_hips_follow()
 	await _test_animator()
 	print("[TEST] bitti — başarısız: %d" % _failures)
@@ -201,6 +201,7 @@ func _fake_model(height: float, tris: int, skeleton: bool, toe_dir: Vector3, ori
 # ---------------------------------------------------------------- Animasyon
 
 func _test_player_model() -> void:
+	await _frames(1)
 	var anim := _player.animator
 	var model := anim.model
 	_check("model: Alpay (Tripo) Player/Visual/Model altında", model != null, "")
@@ -223,6 +224,26 @@ func _test_player_model() -> void:
 				"sapma=%.3f m" % anim.get_root_offset(&"run"))
 		_check("model: koşu klibinin doğal hızı ölçüldü", anim.run_clip_speed > 2.0 and anim.run_clip_speed < 6.0,
 				"%.2f m/s" % anim.run_clip_speed)
+	# Mixamo dış klipleri
+	_check("mixamo: 12 dış klip yüklendi (idle 'With Skin' atlandı)", anim.external_clips.size() == 12 \
+			and not anim.external_clips.has(&"idle"), str(anim.external_clips))
+	if ap != null and ap.has_animation(&"ext/run"):
+		var sk := model.find_child("Skeleton3D", true, false) as Skeleton3D
+		var rest_y := sk.get_bone_rest(sk.find_bone(anim.root_bone)).origin.y
+		var er := ap.get_animation(&"ext/run")
+		var tr := er.find_track(NodePath("Armature/Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+		var hy: float = (er.track_get_key_value(tr, 0) as Vector3).y
+		_check("mixamo: izler modelin iskeletine bağlı + kalça ×1.6 ölçekli", tr >= 0 and absf(hy - rest_y) < rest_y * 0.3,
+				"kalça y=%.2f dinlenme=%.2f" % [hy, rest_y])
+		_check("mixamo: döngüler (run/fall/swing/climb/heal)", er.loop_mode == Animation.LOOP_LINEAR \
+				and ap.get_animation(&"ext/swing").loop_mode == Animation.LOOP_LINEAR, "")
+		for c: StringName in [&"death", &"land", &"whip_attack_3"]:
+			_check("mixamo: '%s' yerinde (InPlace yoktu → kod)" % c, anim.get_root_offset(StringName("ext/%s" % c)) < 0.05,
+					"sapma=%.3f m" % anim.get_root_offset(StringName("ext/%s" % c)))
+		anim.preview_clip = &"whip_up"
+		await _frames(3)
+		_check("anim: klibi olmayan durumda yedek klip (idle)", anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
+		anim.preview_clip = &""
 
 
 ## Koşuya geçiş / durma / ani dönüş boyunca kalçanın oyuncu merkezinden yatay en büyük sapması (m).
@@ -266,7 +287,7 @@ func _test_animator() -> void:
 	await _frames(20)
 	var body := anim.get_procedural_target()
 	if anim.model_player != null:
-		_check("anim: koşu → modelde run klibi, hız eşlemesi", anim.current == &"run" and anim.get_playing_clip() == &"run" \
+		_check("anim: koşu → modelde run klibi, hız eşlemesi", anim.current == &"run" and String(anim.get_playing_clip()).ends_with("run") \
 				and anim.model_player.speed_scale > 1.2, "klip=%s hız×%.2f" % [anim.get_playing_clip(), anim.model_player.speed_scale])
 	else:
 		_check("anim: koşu → run + öne eğilme (yordamsal)", anim.current == &"run" and body.rotation.x > 0.05,
@@ -276,8 +297,7 @@ func _test_animator() -> void:
 	await _frames(6)
 	_check("anim: zıplama → jump_up", anim.current == &"jump_up", str(anim.current))
 	if anim.model_player != null:
-		_check("anim: klibi olmayan durumda yedek klip (idle) + yordamsal poz",
-				anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
+		_check("anim: zıplamada Mixamo jump_up klibi", anim.get_playing_clip() == &"ext/jump_up", str(anim.get_playing_clip()))
 	for i in 60:
 		await _frames(1)
 		if _player.velocity.y < -1.0:
