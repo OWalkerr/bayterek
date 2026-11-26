@@ -104,8 +104,24 @@ Yüklenen set: Kocabaş (dev kaplumbağa), Çürük Sürüngen, Spor Kesesi, Tuz
   | Tuzak Çiçek, Kök Yılanı | %0.02 / %0.00 | — | — | iyi |
 - **Ağırlık yumuşatma:** `w ← (1−α)·w + α·ort(komşu)`, UV dikişindeki kopya köşeler konumdan birleştirilir (dikiş açılmaz), köşe başına en büyük 4 etki, Σ=1. Bir modele uygulamak: `.glb.import` → `import_script/path="res://tools/import/smooth_rig_import.gd"`, tur sayısı / kemik birleştirme betikteki tablolarda.
 - **Bağsız köşe 0, sol/sağ sızıntı yok** — hiçbir modelde Blender'da elle rig düzeltmesi gerekmedi.
-- Modellerin hiçbirinde animasyon klibi yok (yalnız iskelet) → insansı olmayanlar yordamsal kemik animasyonuyla oynatılacak (sıradaki iş).
+- Modellerin hiçbirinde animasyon klibi yok (yalnız iskelet) → insansı olmayanlar yordamsal kemik animasyonuyla oynatılır (§7.7).
 - `env_rock_2m_a` dokusunun adı `prop_ocak_basecolor` (Tripo projesinden kalma ad); model bir kaya (yosunlu, mavi kristalli) — Ocak (ateşli taş ocak) modeli henüz yok.
+
+### Modelleri oyuna bağlama (§7.7, 2026-11-26)
+`ModelVisual` (scripts/art/model_visual.gd) tek giriş noktası: yükle → stilize et → (düşmanlarda) materyali örneğe özel kopyala → yön → yordamsal kemik pozu.
+| Model | Yer | "İleri" ekseni (model uzayı) | Canlandırma |
+|---|---|---|---|
+| `enm_rot_crawler` | `RotCrawler` | +X | çapraz adım (bacak ±0.55 rad, diz), omurga ±0.14, kuyruk ±0.35 gecikmeli, kafa arama; sersemleyince kafa kalkar |
+| `enm_spore_bloater` | `SporeBloater` (rigsiz) | — | ölçek nefesi ±%6, yalpalama, sürüklenirken eğilme, vurulunca şişme |
+| `enm_trap_flower` | `TrapFlower` | — | sap 3 kemikte iki eksen salınım, uyarıda titreme + taç açılması, ısırıkta kapanma; ısırıkta model iner, arada sap uzar |
+| `enm_root_snake` | `RootSnake` | −X | 9 kemik dikey + yan gövde dalgası; uyarıda titrek, fırlarken kafa kalkar |
+| `boss_kokyiyen` | `Rooteater` | (0.5, 0, 1) | gövde/kafa nefesi, 17 kemikli kuyruk kıvrımı, 16 ağız dokunacı; yerden yükselir (ölçeklenmez) |
+| `npc_kocabas` | `KocabasNpc` (Kök Ağzı) | +X | nefes, boyun + kafa oyuncuyu izler (±0.7 rad), ara sıra baş sallama, ayak kıpırtısı, kuyruk |
+| `prop_grapple_flower` | `GrappleFlower` | — | sap üstünden sarkaç salınımı; hedeflenince hale + nabız (model dokusu değişmez) |
+| `prop_ocak` | `Ocak` | — | taş halka + alev/kıvılcım/duman parçacıkları, titreşen ışık (ölçek 1.6, boy 0.56 m) |
+| `env_*` | `GreyboxRoom.decor()` | — | çarpışmasız arka plan süsü |
+- Yeni model eklemek: kemik adlarını `model_check` çıktısından ya da `ModelVisual.bone()` ile al; eksenleri model uzayında ver (Vector3.UP = sağa-sola dönüş, yan eksen = öne-arkaya eğilme).
+- Sıradaki üretim listesi (parallax katmanları, dallar, bitkiler, oyun nesneleri, modüler set, boss parçaları): **docs/11_ASSET_PROMPTS.md**.
 
 ### Üretim akışı (her model)
 1. **Konsept görsel** (Gemini / Midjourney / ChatGPT görsel): aşağıdaki prompt + sabit stil eki. Tek nesne, düz gri arka plan, karakterlerde **T-poz / A-poz**, önden veya 3/4.

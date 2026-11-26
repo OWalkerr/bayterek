@@ -18,3 +18,9 @@ func _build() -> void:
 	glow(Vector3(0.0, 13.0, -1.5), C_SKY)                             # yukarıdaki ışık
 	glow(Vector3(-9.0, 0.4, -1.5))
 	glow(Vector3(9.0, 0.4, -1.5))
+	# M7 sanat: Ocak'ın arkasında kök kemer (ocak köşesi), kenarlarda kayalar; zeminde ince sis
+	decor(E_ARCH, Vector3(0.0, 0.0, -2.7), 0.0, 1.3)
+	decor(E_ROCK, Vector3(-9.8, 0.0, -2.2), 40.0, 0.9)
+	decor(E_ROCK, Vector3(10.0, 0.0, -2.3), -20.0, 0.7)
+	fog(Vector3(-7.0, 0.0, -0.3), Vector3(6.0, 1.0, 3.0))
+	fog(Vector3(7.0, 0.0, -0.3), Vector3(6.0, 1.0, 3.0))

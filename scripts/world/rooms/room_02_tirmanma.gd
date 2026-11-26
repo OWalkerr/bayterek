@@ -6,6 +6,7 @@ extends GreyboxRoom
 func _build() -> void:
 	backdrop(-6.0, 16.0, -1.0, 34.0)
 	platform(-6.0, 16.0, 0.0, 2.0, C_BARK, 4.0)           # kuyu tabanı
+	fog(Vector3(5.0, 0.0, 0.0), Vector3(18.0, 1.4, 3.5))
 	box(Vector3(-5.5, 16.0, 0.0), Vector3(1.0, 34.0, 4.0), C_ROOT)   # sol duvar
 	# Sağ duvarda iki kapı açıklığı: alt (y 0→3, Ocak Odası) ve üst (y 27→30, Yankı Mağarası)
 	box(Vector3(15.5, 15.0, 0.0), Vector3(1.0, 24.0, 4.0), C_ROOT)   # sağ duvar y 3 → 27

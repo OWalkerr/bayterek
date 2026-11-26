@@ -16,3 +16,7 @@ func _build() -> void:
 	platform(31.0, 40.0, 19.5, 1.0, C_MOSS, 4.0)
 	glow(Vector3(17.5, 6.0, -2.0), C_GLOW)
 	place_goal(Vector3(36.0, 19.5, 0.0))
+	# M7: çürük sarmaşıkların altındaki uçurumda sis denizi (düşerken içinden geçilir)
+	fog(Vector3(14.0, -1.0, 0.0), Vector3(24.0, 3.0, 4.0))
+	fog(Vector3(-5.0, 0.0, -0.3), Vector3(8.0, 1.2, 3.0))
+	decor(E_PLATFORM, Vector3(14.0, 4.0, -3.4), 0.0, 1.2)

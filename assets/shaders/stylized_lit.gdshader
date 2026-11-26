@@ -4,6 +4,8 @@
 //  - kenar ışığı (rim / fresnel), mantar ışığı tonunda — siluet okunurluğu (docs/07 kalite kontrol)
 //  - palet tonlama: rengi parlaklığını koruyarak bölge tonuna çeker
 //  - vuruş parlaması (flash) — düşman/boss isabet geri bildirimi
+//  - rüzgâr (wind_strength > 0): yerel yüksekliğe göre artan salınım + oyuncunun yanından geçerken
+//    yana eğilme (push_origin, FoliageField her kare yazar). Bitki/dal örgüleri için (docs/08 §ortam).
 // Compatibility (web) ve Forward+ ile uyumlu: yalnızca standart spatial + light() kullanır.
 shader_type spatial;
 render_mode cull_back;
@@ -28,6 +30,33 @@ uniform float palette_pull : hint_range(0.0, 1.0) = 0.2;
 uniform vec4 emission_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float emission_energy = 0.0;
 uniform float flash : hint_range(0.0, 1.0) = 0.0;
+
+uniform float wind_strength = 0.0;
+uniform float wind_speed = 1.6;
+uniform float wind_height = 1.0;
+uniform vec3 push_origin = vec3(0.0, -1000.0, 0.0);
+uniform float push_radius = 1.4;
+uniform float push_strength = 0.5;
+
+void vertex() {
+	if (wind_strength > 0.0) {
+		float h = clamp(VERTEX.y / wind_height, 0.0, 1.0);
+		h *= h;
+		vec3 base = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+		float ph = base.x * 0.73 + base.z * 0.41 + base.y * 0.2;
+		vec3 sway = vec3(sin(TIME * wind_speed + ph) + 0.35 * sin(TIME * wind_speed * 2.3 + ph * 1.7),
+				0.0, 0.5 * sin(TIME * wind_speed * 0.8 + ph * 1.3)) * wind_strength;
+		// Oyuncu itişi (dünya uzayında hesaplanır, model uzayına döndürülür)
+		vec3 d = base - push_origin;
+		d.y = 0.0;
+		float dist = length(d);
+		float k = 1.0 - smoothstep(0.0, push_radius, dist);
+		vec3 push_w = (dist > 0.001 ? d / dist : vec3(1.0, 0.0, 0.0)) * k * push_strength;
+		vec3 push_l = (inverse(mat3(MODEL_MATRIX)) * push_w);
+		VERTEX += (sway + push_l) * h * wind_height;
+		VERTEX.y -= k * push_strength * 0.3 * h * wind_height;
+	}
+}
 
 void fragment() {
 	vec3 c = albedo.rgb;

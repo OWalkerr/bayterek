@@ -39,3 +39,6 @@ func _build() -> void:
 	glow(Vector3(35.0, 0.3, -12.0), C_SAP)
 	camera_zone(Vector3((SECRET_X1 + SECRET_X2) * 0.5, -3.5, -6.5),
 			Vector3(SECRET_X2 - SECRET_X1, 20.0, 17.0), CameraRig.Mode.DEPTH, 0.8)
+	decor(E_ROCK, Vector3(8.0, 0.0, -2.3), 15.0)
+	decor(E_ARCH, Vector3(18.0, 0.0, -2.8), 0.0, 1.5)
+	fog(Vector3(14.0, 0.0, 0.0), Vector3(12.0, 1.5, 3.5))

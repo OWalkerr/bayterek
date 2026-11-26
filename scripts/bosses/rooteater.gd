@@ -11,6 +11,12 @@ extends Node3D
 ##   tepede kök kayasına kanca → kaya ağza düşer → yenilgi.
 ## Tüm süreler @export; uyarılar ≥ 0.4 sn (docs/04 telegraph kuralı).
 
+const MODEL_PATH: String = "res://assets/models/bosses/boss_kokyiyen.glb"
+## Model uzayında ağzın baktığı yatay yön ve gövde dibinin (kökten çıkan kısım) konumu.
+const MODEL_FORWARD: Vector3 = Vector3(0.5, 0.0, 1.0)
+const MODEL_TRUNK: Vector3 = Vector3(1.7, 0.0, 0.25)
+const MODEL_HEIGHT: float = 8.0
+
 signal phase_changed(phase: int)
 signal defeated
 
@@ -78,6 +84,14 @@ var _body_hazard: BossHazard
 var _erupt_hazard: BossHazard
 var _sweep_hazard: BossHazard
 var _bloaters: Array[Node] = []
+## Görsel model (yoksa greybox silindir).
+var model: ModelVisual
+var _anim_t: float = 0.0
+var _flash_t: float = 0.0
+var _trunk: Array[int] = []
+var _head: Array[int] = []
+var _mouth: Array[int] = []
+var _tail: Array[int] = []
 
 
 func _ready() -> void:
@@ -304,8 +318,12 @@ func _set_rise(t: float) -> void:
 	_rise = clampf(t, 0.0, 1.0)
 	var h := body_height * _rise
 	_body.visible = _rise > 0.02
-	_body_mesh.scale = Vector3(1.0, maxf(_rise, 0.01), 1.0)
-	_body_mesh.position = Vector3.UP * h * 0.5
+	if model != null:
+		# Model katı: yerin altından yükselir (zemin örter), ölçeklenmez
+		model.position = Vector3.UP * (MODEL_HEIGHT + 0.5) * (_rise - 1.0)
+	else:
+		_body_mesh.scale = Vector3(1.0, maxf(_rise, 0.01), 1.0)
+		_body_mesh.position = Vector3.UP * h * 0.5
 	_body_hazard.position = _body.position
 	_body_hazard.active = _rise > 0.3 and (phase == Phase.ONE or phase == Phase.TWO or phase == Phase.INTRO)
 
@@ -352,6 +370,80 @@ func _spawn_bloaters() -> void:
 func _build() -> void:
 	_body = Node3D.new()
 	add_child(_body)
+	if ResourceLoader.exists(MODEL_PATH):
+		_build_model()
+	else:
+		_build_greybox_body()
+	_build_hazards()
+
+
+## Model: ağzı gövdenin +Z'sine (bakış) döndürülür, gövde dibi düğüm merkezine oturtulur.
+func _build_model() -> void:
+	model = ModelVisual.spawn(_body, MODEL_PATH, MODEL_FORWARD, true)
+	model.turn_speed = 0.0
+	model.pivot.rotation.y = -atan2(MODEL_FORWARD.x, MODEL_FORWARD.z)
+	model.model.position = -MODEL_TRUNK
+	for n: String in ["bone_1", "bone_2", "tripo__Spine_0"]:
+		_trunk.append(model.bone(n))
+	for n: String in ["tripo__Head_0", "tripo__Head_1", "tripo__Head_2"]:
+		_head.append(model.bone(n))
+	for i in [7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 25, 27, 28, 29, 30]:
+		_mouth.append(model.bone("bone_%d" % i))
+	_mouth.append(model.bone("tripo__Head_3"))
+	for i in 10:
+		_tail.append(model.bone("tripo__Tail_%d" % i))
+	for n: String in ["bone_44", "bone_45", "bone_47", "bone_48", "bone_55", "bone_56", "bone_57"]:
+		_tail.append(model.bone(n))
+	EventBus.enemy_damaged.connect(func(e: Node, _d: int) -> void:
+		if e is BossWeakPoint and weak_points.has(e):
+			_flash_t = 0.12)
+
+
+## Yordamsal canlılık (docs/04 telegraph'ları görünür kılar):
+##  - gövde ve kafa yavaş salınır (nefes), kuyruk yılan gibi kıvrılır
+##  - uyarılarda (çatlak, süpürme uyarısı, giriş) kafa geri kalkar, ağız dokunaçları açılıp titrer
+##  - açıktayken kafa oyuncuya eğilir; süpürmede kuyruk sert savrulur; vurulunca beyaz parlar
+func _process(delta: float) -> void:
+	if model == null or delta <= 0.0 or not _body.visible:
+		return
+	_anim_t += delta
+	var t := _anim_t
+	var up := Vector3.UP
+	var fwd := MODEL_FORWARD.normalized()
+	var side := up.cross(fwd).normalized()     # bu eksen etrafında dönüş = öne/arkaya eğilme
+	var roar := action == Action.TELEGRAPH or action == Action.SWEEP_TELL or phase == Phase.INTRO \
+			or action == Action.ERUPT
+	var exposed := action == Action.EXPOSED
+	var sweeping := action == Action.SWEEP or action == Action.SWEEP_TELL
+	for i in _trunk.size():
+		model.add_rotation(_trunk[i], side, sin(t * 1.1 - i * 0.6) * 0.05)
+		model.add_rotation(_trunk[i], up, sin(t * 0.7 - i * 0.5) * 0.06)
+	var head_pitch := 0.0
+	if roar:
+		head_pitch = -0.35
+	elif exposed:
+		head_pitch = 0.25
+	for i in _head.size():
+		model.add_rotation(_head[i], side, head_pitch / _head.size() + sin(t * 1.6 - i * 0.8) * 0.05)
+		model.add_rotation(_head[i], up, sin(t * 0.9 - i) * 0.05)
+	var mouth_amp := 0.45 if roar else 0.12
+	var mouth_speed := 16.0 if roar else 2.5
+	for i in _mouth.size():
+		var ax := Vector3(sin(i * 1.7), cos(i * 2.3), sin(i * 0.9 + 1.0)).normalized()
+		model.add_rotation(_mouth[i], ax, sin(t * mouth_speed + i * 1.3) * mouth_amp)
+	var tail_amp := 0.5 if sweeping else 0.16
+	var tail_speed := 9.0 if sweeping else 1.8
+	for i in _tail.size():
+		model.add_rotation(_tail[i], up, sin(t * tail_speed - i * 0.55) * tail_amp)
+	model.apply_pose()
+	# fırlarken titreme
+	model.pivot.position = Vector3(sin(t * 60.0), 0.0, cos(t * 53.0)) * (0.08 if action == Action.ERUPT else 0.0)
+	if _flash_t > 0.0:
+		_flash_t -= delta
+		model.set_shader_param(&"flash", 1.0 if _flash_t > 0.0 else 0.0)
+
+
+func _build_greybox_body() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color("4a2a4a")
 	mat.roughness = 0.8
@@ -379,6 +471,8 @@ func _build() -> void:
 		eye_mi.position = Vector3(side, 0.9, body_radius * 0.85)
 		_body_mesh.add_child(eye_mi)
 
+
+func _build_hazards() -> void:
 	_body_hazard = BossHazard.new()
 	add_child(_body_hazard)
 	_body_hazard.set_cylinder(body_radius, body_height)

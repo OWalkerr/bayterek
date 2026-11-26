@@ -16,8 +16,16 @@ const CLOUD_SCRIPT: Script = preload("res://scripts/enemies/spore_cloud.gd")
 ## Yuvasından en fazla bu kadar uzaklaşır.
 @export var leash: float = 5.0
 
+const MODEL_PATH: String = "res://assets/models/enemies/enm_spore_bloater.glb"
+
+## Nefes (ölçek nabzı) genliği ve hızı; vurulunca şişme.
+@export var breathe_amount: float = 0.06
+@export var breathe_speed: float = 2.4
+
 var state: State = State.IDLE
+var model: ModelVisual
 var _time: float = 0.0
+var _swell: float = 0.0
 
 
 func _enemy_ready() -> void:
@@ -27,6 +35,13 @@ func _enemy_ready() -> void:
 
 
 func _build_visual() -> void:
+	hurtbox_size = Vector3(1.1, 1.1, 1.1)
+	hurtbox_offset = Vector3.ZERO
+	if ResourceLoader.exists(MODEL_PATH):
+		# Rigsiz model (boy 1.1 m, orijin dipte) → gövde merkezi düğüm konumuna gelsin
+		model = ModelVisual.spawn(visual, MODEL_PATH, Vector3.BACK, true)
+		model.position = Vector3.DOWN * 0.55
+		return
 	var body := SphereMesh.new()
 	body.radius = 0.5
 	body.height = 1.0
@@ -36,8 +51,24 @@ func _build_visual() -> void:
 		spot.radius = 0.1
 		spot.height = 0.2
 		_mesh(spot, Color("c9d93b"), offset, true)
-	hurtbox_size = Vector3(1.1, 1.1, 1.1)
-	hurtbox_offset = Vector3.ZERO
+
+
+## Yordamsal: nefes alır gibi şişip söner (dikeyde tersine: ezil-uza), yalpalar, oyuncuya doğru
+## sürüklenirken o yana eğilir; vurulunca bir an şişer (patlamadan önceki okunur an).
+func _process(delta: float) -> void:
+	if model == null or delta <= 0.0:
+		return
+	_swell = move_toward(_swell, 0.0, delta * 3.0)
+	var b := sin(_time * breathe_speed) * breathe_amount
+	var s := 1.0 + _swell * 0.35
+	visual.scale = Vector3(s * (1.0 + b), s * (1.0 - b * 0.8), s * (1.0 + b))
+	var lean := clampf(-velocity.x * 0.25, -0.35, 0.35)
+	visual.rotation.z = lerpf(visual.rotation.z, lean + sin(_time * 1.3) * 0.08, minf(1.0, delta * 4.0))
+	visual.rotation.x = sin(_time * 1.1 + 1.0) * 0.06
+
+
+func _on_hit(_damage: int, _from: Vector3) -> void:
+	_swell = 1.0
 
 
 func _enemy_physics(delta: float) -> void:

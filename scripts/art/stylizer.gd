@@ -9,6 +9,8 @@ const SHADER: Shader = preload("res://assets/shaders/stylized_lit.gdshader")
 const DEFAULT_PALETTE: String = "res://data/art/palette_kok_dibi.tres"
 const META_SKIP: StringName = &"no_stylize"
 const META_SOURCE: StringName = &"stylized_from"
+## Rüzgârlı bitki materyali: {strength, height, speed, push} → shader rüzgâr parametreleri.
+const META_WIND: StringName = &"wind"
 
 static var palette: RegionPalette = null
 static var _cache: Dictionary = {}     # kaynak materyal instance_id -> ShaderMaterial
@@ -57,6 +59,13 @@ static func stylize_material(source: Material) -> Material:
 	if std.emission_enabled:
 		mat.set_shader_parameter(&"emission_color", std.emission)
 		mat.set_shader_parameter(&"emission_energy", std.emission_energy_multiplier)
+	if std.has_meta(META_WIND):
+		# Rüzgârlı bitki: {strength, height, speed?}
+		var w: Dictionary = std.get_meta(META_WIND)
+		mat.set_shader_parameter(&"wind_strength", float(w.get("strength", 0.1)))
+		mat.set_shader_parameter(&"wind_height", float(w.get("height", 1.0)))
+		mat.set_shader_parameter(&"wind_speed", float(w.get("speed", 1.6)))
+		mat.set_shader_parameter(&"push_strength", float(w.get("push", 0.5)))
 	mat.set_meta(META_SOURCE, std)
 	_cache[key] = mat
 	return mat

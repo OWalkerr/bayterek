@@ -80,3 +80,8 @@
 | 2026-11-26 | Alpay animasyonları: Mixamo "Without Skin" klipleri çalışma zamanında Tripo modeline bağlanır (model değişmedi) | Kemik adları/hiyerarşi aynı, yerel pozlar doğrudan geçiyor; yeni model indirip yeniden doğrulamaya gerek kalmadı |
 | 2026-11-26 | Oto-rig kalitesi kodla ölçülür (bükme testi) ve içe aktarmada düzeltilir (ağırlık yumuşatma + kemik birleştirme); Blender'da elle rig düzeltmesi yok | Kullanıcı Blender kullanmıyor; Kocabaş kabuğu ikiye bölünmüş, Kökyiyen kuyruğu sert ağırlıklıydı — ikisi de Alpay seviyesine indi |
 | 2026-11-26 | Kökyiyen boyu 8 m (arena tavanına göre) | Tripo normalize çıktısı ölçeklendi; arenada tam görünür |
+| 2026-11-26 | İnsansı olmayan modeller (düşmanlar, boss, Kocabaş) klipsiz, kodla canlandırılır (yordamsal kemik animasyonu) | Tripo yalnız iskelet verdi; Blender/Mixamo dört ayaklı ve yılanı desteklemiyor. Hareket oyun durumuna bağlı (adım = hız, uyarı = titreme) → telegraph'lar kendiliğinden okunur |
+| 2026-11-26 | Kocabaş eğitim odası Kök Ağzı'nda (oyun alanının arkasında, oyuncuyu izler) | docs/01: tutorial'da Alpay Kocabaş ile oynar; Ocak Odası'na konsaydı yakalanma hikayesiyle çelişirdi |
+| 2026-11-26 | Yerel sis: billboard puf öbekleri, oyuncu geçince dağılır ve yavaşça toplanır | Kullanıcı isteği ("içinden geçince dağılsın, yumuşak his"); FogVolume web'de yok |
+| 2026-11-26 | Bitki rüzgârı stilize shader'da (köşe), oyuncu itişi odaya tek nokta ile | Ayrı shader yok → bitkiler de aynı ışık ailesinde; maliyet: oda başına bir uniform yazımı |
+| 2026-11-26 | Kapan Çiçek ve Kök Yılanı Spor Mahzeni'ne eklendi | Model geldi, docs/04 tasarımı vardı; botların geçtiği odalar değişmesin diye bu oda seçildi |

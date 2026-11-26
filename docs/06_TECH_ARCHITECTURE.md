@@ -100,6 +100,9 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 - `scripts/art/model_validator.gd` + `tests/model_check.tscn`: `assets/models/**` altındaki her GLB/GLTF/FBX'i ölçer; deri bağlı modellerde rig raporu + bükme testi (`[RIG]`).
 - `scripts/art/rig_smoother.gd` + `tools/import/smooth_rig_import.gd` (içe aktarma sonrası betik): oto-rig ağırlıklarını yumuşatır, katı parçayı bölen kemikleri birleştirir (docs/07 §7.6). Yalnız içe aktarmada çalışır; `tools/` web build'e girmez, işlenmiş sahne girer.
 - `scripts/player/player_animator.gd` (`Player/Animator`): mantıksal animasyon durumu; model yoksa kapsülde yordamsal poz, `Visual` altında AnimationPlayer'lı model varsa `clip_map` ile klip oynatır.
+- `scripts/art/model_visual.gd` (`ModelVisual`): GLB yükler, stilize eder, isteğe bağlı örneğe özel materyal (vuruş parlaması tek düşmanda), yön (`face`/`face_x`, gerçek dönüş), yordamsal kemik pozu (`add_rotation(kemik, model_ekseni, açı)` + `apply_pose()`; eksen model uzayında verilir, kemiğin yerel eksenine çevrilir).
+- `scripts/fx/fx_library.gd` (`FxLibrary`): ateş, kıvılcım, duman, toz, puf, spor, düşen yaprak (CPUParticles3D). `scripts/world/room_dressing.gd` (`RoomDressing`): otomatik bitki/kök/spor giydirme + rüzgâr itiş noktası. `scripts/world/fog_patch.gd` (`FogPatch`): dağılan sis. `scripts/world/kocabas_npc.gd`.
+- Yeni düşmanlar: `scripts/enemies/trap_flower.gd` (`TrapFlower`), `scripts/enemies/root_snake.gd` (`RootSnake`); `GreyboxRoom.trap_flower()/root_snake()/fog()/decor()`.
 - **Shader doğrulaması:** headless'ta GPU yok → shader yalnızca web build'de (WebGL/Compatibility) derlenip görülür; her M7 değişikliğinde web ekran görüntüsü alınır.
 
 ## Boss Mimarisi (M6)

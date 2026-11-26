@@ -29,6 +29,9 @@ func _build() -> void:
 	glow(Vector3(9.0, 0.3, -20.0), Color("5a1e5c"))
 	glow(Vector3(31.0, 0.3, -20.0), Color("5a1e5c"))
 	camera_zone(Vector3(21.0, 3.0, -9.0), Vector3(22.0, 14.0, 26.0), CameraRig.Mode.DEPTH, 1.0)
+	var arena_fog := fog(Vector3(20.0, 0.0, -10.0), Vector3(22.0, 1.2, 20.0))
+	arena_fog.puff_size = 4.0
+	arena_fog.color = Color("9a86b0")
 
 	# ---- Kuyu (Faz 3)
 	_chase_floor = box(Vector3(68.0, -0.5, 0.0), Vector3(16.0, 1.0, 4.0), C_CAVE)

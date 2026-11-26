@@ -13,16 +13,25 @@ const C_CAVE := Color("2b1e3f")
 const C_GLOW := Color("4fb3a9")
 const C_SAP := Color("e8a33d")
 const C_SKY := Color("f4efe3")
+## Çevre seti modelleri (Tripo; ölçek import'ta).
+const E_ARCH := "res://assets/models/environment/env_root_arch_4m_a.glb"
+const E_ROCK := "res://assets/models/environment/env_rock_2m_a.glb"
+const E_PLATFORM := "res://assets/models/environment/env_root_platform_4m_a.glb"
 
 var goal: RoomGoal = null
 ## Otomatik sınırlara eklenen pay (m).
 var bounds_margin: float = 1.0
+## Otomatik giydirme (ot, eğrelti, sarkan kök, spor; RoomDressing). Alt sınıf _build içinde kapatabilir.
+var dressing_enabled: bool = true
+var dressing: RoomDressing
 
 
 func _ready() -> void:
 	_build()
 	if bounds.size == Vector3.ZERO:
 		bounds = compute_bounds()
+	if dressing_enabled:
+		dressing = RoomDressing.dress(self)
 
 
 ## Odadaki tüm statik kutuların birleşik AABB'si (+ pay).
@@ -155,6 +164,51 @@ func bloater(at: Vector3, respawn_seconds: float = -1.0) -> SporeBloater:
 	e.position = at
 	add_child(e)
 	return e
+
+
+## Tavandan sarkan Kapan Çiçek; `ceiling_at` = tutturma noktası (tavanın alt yüzü).
+func trap_flower(ceiling_at: Vector3) -> TrapFlower:
+	var e := TrapFlower.new()
+	e.position = ceiling_at
+	add_child(e)
+	return e
+
+
+## Duvar deliğinden fırlayan Kök Yılanı. `hole_at` = delik ağzı, `out_dir` = fırlama yönü.
+## Delik bir kök kütlesinin ön yüzünde durur (gövdenin geri kalanını kütle örter).
+func root_snake(hole_at: Vector3, out_dir: Vector3 = Vector3.BACK, delay: float = 0.0) -> RootSnake:
+	var depth := 3.2
+	var mass := box(hole_at - out_dir.normalized() * depth * 0.5,
+			Vector3(2.2, 2.4, depth) if absf(out_dir.z) > 0.5 else Vector3(depth, 2.4, 2.2), Color("3a2838"))
+	mass.collision_layer = 0   # süs kütlesi: arka duvarın önünde, oyuncu koridorunda değil
+	var e := RootSnake.new()
+	e.out_dir = out_dir
+	e.start_delay = delay
+	e.position = hole_at
+	add_child(e)
+	return e
+
+
+## Yerel sis öbeği: `floor_center` = öbeğin taban ortası (zemin üstü), `size` = genişlik/yükseklik/derinlik.
+func fog(floor_center: Vector3, size: Vector3 = Vector3(8.0, 2.0, 3.0)) -> FogPatch:
+	var f := FogPatch.new()
+	f.size = size
+	f.position = floor_center + Vector3.UP * size.y * 0.5
+	add_child(f)
+	return f
+
+
+## Çarpışmasız süs modeli (çevre seti). `yaw_deg` Y dönüşü, `scale_mul` ek ölçek.
+func decor(path: String, at: Vector3, yaw_deg: float = 0.0, scale_mul: float = 1.0) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var inst := (load(path) as PackedScene).instantiate() as Node3D
+	inst.position = at
+	inst.rotation_degrees.y = yaw_deg
+	inst.scale = Vector3.ONE * scale_mul
+	add_child(inst)
+	Stylizer.apply(inst)
+	return inst
 
 
 func glow(at: Vector3, color: Color = C_GLOW) -> void:

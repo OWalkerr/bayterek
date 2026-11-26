@@ -73,7 +73,7 @@ Dünya **dikey bir kule** gibidir: aşağıdan yukarı 6 ana bölge. Metroidvani
 | Çürük Yuvası → Savrulma Zinciri → Çürük Geçit | Savaş, sallanma, çürük sarmaşık | Çürük Geçit sonunda Ocak "gecit" |
 | **Sunak Odası** | **Kamçı Kancası** kazanılır; hemen denenecek çiçek | Çürük Geçit ↔ Kanca Bahçesi |
 | **Kanca Bahçesi** | 22 m sarmaşıksız uçurum, yalnızca kanca çiçekleri | İki yön de kanca ister |
-| **Spor Mahzeni** | Sürüngen + 3 Şişkin; tavandaki çiçekle üstlerinden geç ya da dövüş | |
+| **Spor Mahzeni** | Sürüngen + 3 Şişkin; tavandaki çiçekle üstlerinden geç ya da dövüş. M7: girişte alçak sarkıntıda 2 Kapan Çiçek, arka duvarda Kök Yılanı | |
 | **Çiçek Kuyusu** | Tırmanma + kanca, 22.5 m dikey | Tepe kapısı kanca ister |
 | **Kökyiyen Eşiği** | Boss öncesi Ocak "esik" + kök kapısı | D: Kökyiyen'in İni |
 | **Kökyiyen'in İni** (M6) | Boss: arena (DEPTH) + kovalamaca kuyusu (SIDE); dövüşte kapı kilitli | Yenilince Kut #3, Kocabaş'ın mesajı |

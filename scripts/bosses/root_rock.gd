@@ -8,6 +8,7 @@ signal pulled
 
 func _ready() -> void:
 	petal_color = Color("8a6a4a")
+	use_model = false
 	super._ready()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color("6b4a2f")

@@ -14,6 +14,7 @@ const GROUP: StringName = &"vine_anchor"
 var _grabbed: bool = false
 var _time: float = 0.0
 var _vine_mesh: MeshInstance3D
+var _knot: MeshInstance3D
 var _vine_material: StandardMaterial3D
 var _hand_offset: Vector3 = Vector3.ZERO
 
@@ -91,9 +92,9 @@ func _build_visual() -> void:
 	knot.radius = 0.22
 	knot.height = 0.44
 	knot.material = knot_mat
-	var knot_instance := MeshInstance3D.new()
-	knot_instance.mesh = knot
-	add_child(knot_instance)
+	_knot = MeshInstance3D.new()
+	_knot.mesh = knot
+	add_child(_knot)
 
 
 func _set_vine_end(end_point: Vector3) -> void:

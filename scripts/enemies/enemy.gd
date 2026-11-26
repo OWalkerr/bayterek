@@ -21,6 +21,8 @@ signal died
 @export var hurtbox_size: Vector3 = Vector3(1.0, 1.0, 1.0)
 @export var hurtbox_offset: Vector3 = Vector3(0.0, 0.5, 0.0)
 @export var flash_time: float = 0.1
+## Ölüm pufunun rengi (çürüklük moru).
+@export var death_fx_color: Color = Color("8a3a8c")
 
 var hp: int = 3
 var home_position: Vector3
@@ -122,6 +124,7 @@ func _on_respawn() -> void:
 
 func _die() -> void:
 	_dead = true
+	FxLibrary.spawn_oneshot(get_parent(), FxLibrary.puff(death_fx_color), global_position + hurtbox.position)
 	_on_die()
 	visible = false
 	hurtbox.set_deferred(&"monitorable", false)

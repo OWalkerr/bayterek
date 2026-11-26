@@ -5,6 +5,7 @@ extends Area3D
 ## düşmanlar yeniden doğar. Ölümde oyuncu son Ocak'ta tam canla dirilir (karar 2026-11-25).
 
 const GROUP: StringName = &"ocak"
+const MODEL_PATH: String = "res://assets/models/props/prop_ocak.glb"
 
 @export var ocak_id: StringName = &"ocak"
 @export var radius: float = 1.6
@@ -15,8 +16,12 @@ const GROUP: StringName = &"ocak"
 var _player_inside: Player = null
 var _prompt: Label3D
 var _light: OmniLight3D
-var _flame: MeshInstance3D
+var _flame: Node3D
 var _time: float = 0.0
+var model: ModelVisual
+var fire: CPUParticles3D
+var embers: CPUParticles3D
+var smoke: CPUParticles3D
 
 
 func _ready() -> void:
@@ -61,7 +66,9 @@ func _physics_process(_delta: float) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_light.light_energy = 2.2 + sin(_time * 9.0) * 0.25 + sin(_time * 23.0) * 0.1
+	# Titrek ateş ışığı: üç frekans + hafif konum oynaması (gölgeler canlı)
+	_light.light_energy = 2.2 + sin(_time * 9.0) * 0.25 + sin(_time * 23.0) * 0.12 + sin(_time * 3.7) * 0.15
+	_light.position = Vector3(sin(_time * 7.0) * 0.05, 1.0 + sin(_time * 5.0) * 0.04, cos(_time * 6.0) * 0.05)
 	_flame.scale = Vector3.ONE * (1.0 + sin(_time * 11.0) * 0.06)
 
 
@@ -75,6 +82,9 @@ func rest() -> void:
 
 
 func _build_visual() -> void:
+	if ResourceLoader.exists(MODEL_PATH):
+		_build_model_visual()
+		return
 	var stone_mat := StandardMaterial3D.new()
 	stone_mat.albedo_color = Color("4a3550")
 	var ring := CylinderMesh.new()
@@ -99,6 +109,42 @@ func _build_visual() -> void:
 	_flame.mesh = flame
 	_flame.position = Vector3.UP * 0.6
 	add_child(_flame)
+	_add_light_and_prompt()
+
+
+## Model (taş halka, boy 0.56 m) + hareketli ateş: alev, kıvılcım, duman parçacıkları + iç parıltı.
+func _build_model_visual() -> void:
+	model = ModelVisual.spawn(self, MODEL_PATH, Vector3.BACK)
+	_flame = Node3D.new()
+	_flame.position = Vector3.UP * 0.35
+	add_child(_flame)
+	fire = FxLibrary.fire(1.0)
+	fire.emitting = true
+	_flame.add_child(fire)
+	embers = FxLibrary.embers(1.0)
+	embers.emitting = true
+	embers.position = Vector3.UP * 0.3
+	_flame.add_child(embers)
+	smoke = FxLibrary.smoke(1.0)
+	smoke.emitting = true
+	smoke.position = Vector3.UP * 0.9
+	_flame.add_child(smoke)
+	# Közlerin sıcak çekirdeği (sabit, yumuşak)
+	var core_mat := FxLibrary.particle_material(true).duplicate() as StandardMaterial3D
+	core_mat.vertex_color_use_as_albedo = false
+	core_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	core_mat.albedo_color = Color(1.0, 0.6, 0.2, 0.8)
+	var core := QuadMesh.new()
+	core.size = Vector2(1.0, 0.7)
+	core.material = core_mat
+	var core_mi := MeshInstance3D.new()
+	core_mi.mesh = core
+	core_mi.position = Vector3.UP * 0.05
+	_flame.add_child(core_mi)
+	_add_light_and_prompt()
+
+
+func _add_light_and_prompt() -> void:
 	_light = OmniLight3D.new()
 	_light.light_color = fire_color
 	_light.omni_range = 7.0

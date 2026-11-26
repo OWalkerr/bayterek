@@ -84,9 +84,28 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_timers(delta)
 	_update_grapple()
+	# Havadaki en büyük düşüş hızı (move_and_slide inişte hızı sıfırladığı için son kare değil)
+	_last_air_vy = minf(_last_air_vy, velocity.y) if state == State.AIR else 0.0
 	(_states[state] as PlayerState).physics_update(delta)
 	_update_visual(delta)
 	_check_fall_out()
+
+
+## İnişte toz pufu (docs/08 Juice): düşüş hızı eşiği ve son hava hızı.
+@export var land_dust_speed: float = 7.0
+var land_dust_count: int = 0
+var _last_air_vy: float = 0.0
+
+
+func _spawn_land_dust(strength: float) -> void:
+	land_dust_count += 1
+	var fx := FxLibrary.dust_burst(Color("9a8aa0"), int(10 + 10 * strength), 0.35 + 0.25 * strength)
+	fx.initial_velocity_max = 1.2 + 1.8 * strength
+	fx.direction = Vector3.UP
+	fx.spread = 85.0
+	fx.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	fx.emission_box_extents = Vector3(0.35, 0.02, 0.25)
+	FxLibrary.spawn_oneshot(get_parent(), fx, global_position + Vector3.UP * 0.05)
 
 
 ## Tek durum değişim noktası. Aynı durum nesnesine geçişte (GROUND↔AIR) enter/exit çağrılmaz.
@@ -99,6 +118,9 @@ func change_state(new_state: State) -> void:
 	if old_obj != new_obj:
 		old_obj.exit(new_state)
 	state = new_state
+	if old_state == State.AIR and new_state == State.GROUND and _last_air_vy < -land_dust_speed:
+		_spawn_land_dust(clampf(-_last_air_vy / 18.0, 0.4, 1.0))
+	_last_air_vy = 0.0
 	if old_obj != new_obj:
 		new_obj.enter(old_state)
 	EventBus.player_state_changed.emit(new_state)

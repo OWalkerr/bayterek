@@ -15,6 +15,12 @@ func _build() -> void:
 	box(Vector3(42.0, 12.0, -3.5), Vector3(24.0, 30.0, 1.0), C_ROOT)
 	box(Vector3(26.0, 18.0, -3.5), Vector3(8.0, 18.0, 1.0), C_ROOT)    # mağara ağzının üstü
 
+	# Kocabaş: başlangıç zemininin arkasında dinlenir (eğitim: "Alpay, Kocabaş ile oynar", docs/01)
+	var kocabas := KocabasNpc.new()
+	kocabas.position = Vector3(-5.5, 0.0, -1.9)
+	kocabas.facing = 1.0
+	add_child(kocabas)
+
 	# Çukur üstündeki sarmaşıklar
 	vine(Vector3(11.0, 6.5, 0.0), 3.2)
 	vine(Vector3(15.5, 7.0, 0.0), 3.2)
@@ -48,3 +54,12 @@ func _build() -> void:
 	# Varış çıkıntısı + gök ışığı (hedef)
 	box(Vector3(56.0, 15.75, 0.0), Vector3(6.0, 0.5, 3.0), C_MOSS)
 	place_goal(Vector3(57.5, 16.0, 0.0))
+
+	# M7 sanat: mağara ağzını çerçeveleyen kök kemer, kayalar, arka planda süzülen kök platform
+	decor(E_ARCH, Vector3(26.0, 0.0, -2.9), 0.0, 2.0)
+	decor(E_ROCK, Vector3(-8.5, 0.0, -2.3), 20.0)
+	decor(E_ROCK, Vector3(46.0, 0.0, -2.4), -35.0, 0.8)
+	decor(E_PLATFORM, Vector3(4.0, 8.5, -2.9), 10.0)
+	# sis: çukurun dibi ve mağaranın derinliği
+	fog(Vector3(13.0, -8.0, 0.0), Vector3(10.0, 2.5, 4.0))
+	fog(Vector3(26.0, 0.0, -17.0), Vector3(7.0, 1.4, 12.0))

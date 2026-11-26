@@ -32,6 +32,12 @@ func _run() -> void:
 	await _test_hips_follow()
 	await _test_jump_land_hips()
 	await _test_animator()
+	await _test_art_enemies()
+	await _test_trap_flower()
+	await _test_root_snake()
+	await _test_art_props()
+	await _test_dressing_and_fog()
+	await _test_land_dust()
 	print("[TEST] bitti — başarısız: %d" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
 
@@ -114,8 +120,16 @@ func _test_enemy_flash() -> void:
 			break
 	crawler.take_hit(1, crawler.global_position + Vector3.LEFT, &"forward")
 	await _frames(1)
-	var mat := (crawler.visual.get_child(0) as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial
+	var mat: ShaderMaterial = crawler.get_model().get_materials()[0] if crawler.get_model() != null \
+			else (crawler.visual.get_child(0) as MeshInstance3D).get_surface_override_material(0) as ShaderMaterial
 	_check("düşman: vurulunca shader parlaması", crawler.is_flashing() and float(mat.get_shader_parameter(&"flash")) > 0.5, "")
+	var others := 0
+	for e: Node in get_tree().get_nodes_in_group(Enemy.GROUP):
+		if e is RotCrawler and e != crawler and (e as RotCrawler).get_model() != null:
+			var fl: Variant = (e as RotCrawler).get_model().get_materials()[0].get_shader_parameter(&"flash")
+			if fl != null and float(fl) > 0.5:
+				others += 1
+	_check("düşman: parlama yalnız vurulan sürüngende (materyal örneğe özel)", others == 0, "")
 	await _frames(int(crawler.flash_time * 60.0) + 3)
 	_check("düşman: parlama sönüyor", not crawler.is_flashing() and float(mat.get_shader_parameter(&"flash")) < 0.5, "")
 
@@ -442,6 +456,217 @@ func _test_animator() -> void:
 	_player.take_damage(1, _player.global_position)
 	await _frames(2)
 	_check("anim: ölüm → death", anim.current == &"death", str(anim.current))
+
+
+# ---------------------------------------------------------------- M7 model yerleştirme + ortam
+
+func _enter(room_id: StringName, at: Vector3) -> Node:
+	GameState.reset_health()
+	SceneRouter.enter_room_immediate(room_id)
+	await _frames(3)
+	_teleport(at)
+	await _frames(2)
+	return _level.get("room") as Node
+
+
+func _first(group: StringName, type_check: Callable) -> Node:
+	for n: Node in get_tree().get_nodes_in_group(group):
+		if type_check.call(n):
+			return n
+	return null
+
+
+func _test_art_enemies() -> void:
+	# önceki test oyuncuyu öldürdü: ölüm/diriliş akışı (karartma, yavaşlama) bitsin
+	for i in 240:
+		await _frames(1)
+		if _player.state != Player.State.DEAD and not get_tree().paused and Engine.time_scale > 0.99:
+			break
+	print("[TEST] bilgi: durum=%d duraklatıldı=%s zaman=%.2f" % [_player.state, get_tree().paused, Engine.time_scale])
+	await _enter(&"spor_mahzeni", Vector3(-8.0, 0.1, 0.0))
+	var crawler := _first(Enemy.GROUP, func(n: Node) -> bool: return n is RotCrawler) as RotCrawler
+	var bloater := _first(Enemy.GROUP, func(n: Node) -> bool: return n is SporeBloater) as SporeBloater
+	_check("model: sürüngen modeli bağlı (greybox yok)", crawler != null and crawler.get_model() != null \
+			and crawler.get_model().skeleton != null, "")
+	if crawler == null or crawler.get_model() == null:
+		return
+	var mv := crawler.get_model()
+	var leg := mv.bone("tripo__0_Left_Limb_0")
+	var max_angle := 0.0
+	for i in 40:
+		await _frames(1)
+		max_angle = maxf(max_angle, mv.bone_pose_angle(leg))
+	_check("anim: sürüngen yürürken bacak sallanıyor (yordamsal)", max_angle > 0.2, "en büyük=%.2f rad" % max_angle)
+	var dir := crawler.direction
+	var fwd := mv.pivot.global_transform.basis * Vector3.RIGHT
+	_check("model: sürüngen yürüdüğü yöne bakıyor (ayna değil dönüş)", fwd.x * dir > 0.7 and mv.scale.x > 0.0,
+			"ileri=%s yön=%.0f" % [str(fwd), dir])
+	_check("model: şişkin modeli bağlı + nefes alıyor", bloater != null and bloater.model != null, "")
+	if bloater != null:
+		var s0 := bloater.visual.scale
+		await _frames(20)
+		_check("anim: şişkin ölçeği nefesle değişiyor", bloater.visual.scale.distance_to(s0) > 0.005, "")
+	_check("model: düşmanlar stilize", _count_unstylized(crawler) == 0, "")
+
+
+func _test_trap_flower() -> void:
+	var room := await _enter(&"spor_mahzeni", Vector3(-8.0, 0.1, 0.0))
+	var flower := _first(Enemy.GROUP, func(n: Node) -> bool: return n is TrapFlower) as TrapFlower
+	_check("kapan çiçek: odada + model", flower != null and flower.model != null, "")
+	if flower == null:
+		return
+	await _frames(5)
+	_check("kapan çiçek: oyuncu uzaktayken bekliyor", flower.state == TrapFlower.State.IDLE, "")
+	var under := Vector3(flower.global_position.x, 0.1, 0.0)
+	_teleport(under)
+	var leaves0 := GameState.leaves
+	var told := false
+	var bit := false
+	var lowest := 0.0
+	for i in 90:
+		await _frames(1)
+		told = told or flower.is_telling()
+		bit = bit or flower.is_biting()
+		lowest = maxf(lowest, flower.drop)
+		_player.global_position.x = under.x
+	_check("kapan çiçek: altına girince önce uyarıyor (titreme)", told, "")
+	_check("kapan çiçek: sonra ısırıyor, kafa oyuncu boyuna iniyor", bit and flower.global_position.y - lowest < 1.8,
+			"en alçak kafa y=%.2f" % (flower.global_position.y - lowest))
+	_check("kapan çiçek: ısırık can götürüyor", GameState.leaves < leaves0, "yaprak %d → %d" % [leaves0, GameState.leaves])
+	_teleport(Vector3(-8.0, 0.1, 0.0))
+	await _frames(70)
+	_check("kapan çiçek: geri çekiliyor", flower.state == TrapFlower.State.IDLE and absf(flower.drop - flower.idle_drop) < 0.2, "")
+	flower.take_hit(1, flower.global_position, &"up")
+	flower.take_hit(1, flower.global_position, &"up")
+	_check("kapan çiçek: iki vuruşta ölüyor", flower.is_dead(), "")
+	room = room
+
+
+func _test_root_snake() -> void:
+	await _enter(&"spor_mahzeni", Vector3(-8.0, 0.1, 0.0))
+	var snake := _first(Enemy.GROUP, func(n: Node) -> bool: return n is RootSnake) as RootSnake
+	_check("kök yılanı: odada + model", snake != null and snake.model != null, "")
+	if snake == null:
+		return
+	await _frames(30)
+	_check("kök yılanı: oyuncu uzakta → delikte", snake.state == RootSnake.State.HIDDEN and not snake.is_out(), "")
+	_teleport(Vector3(snake.global_position.x - 3.0, 0.1, 0.0))
+	var told := false
+	var out := false
+	for i in 200:
+		await _frames(1)
+		told = told or snake.is_telling()
+		if snake.state == RootSnake.State.OUT:
+			out = true
+			break
+	_check("kök yılanı: önce delik parlıyor (uyarı)", told, "")
+	_check("kök yılanı: sonra koridora fırlıyor", out and snake.get_head_position().z > -0.3,
+			"kafa=%s" % str(snake.get_head_position()))
+	snake.take_hit(1, snake.get_head_position(), &"forward")
+	await _frames(25)
+	_check("kök yılanı: vurulunca deliğe çekiliyor", not snake.is_out(), "uzanma=%.2f" % snake.extend)
+
+
+func _test_art_props() -> void:
+	# Kanca çiçeği + Ocak + Kocabaş + Kökyiyen
+	var room := await _enter(&"ocak_odasi", Vector3(-3.0, 0.1, 0.0))
+	var flower := _first(GrappleFlower.FLOWER_GROUP, func(n: Node) -> bool: return not n is RootRock) as GrappleFlower
+	_check("kanca çiçeği: model bağlı", flower != null and flower.model != null, "")
+	if flower != null:
+		flower.set_targeted(true)
+		await _frames(30)
+		_check("kanca çiçeği: hedeflenince parlıyor + büyüyor", flower.model.scale.x > 1.03, "ölçek=%.3f" % flower.model.scale.x)
+		flower.set_targeted(false)
+	var ocak := _first(Ocak.GROUP, func(_n: Node) -> bool: return true) as Ocak
+	_check("ocak: model + hareketli ateş (alev, kıvılcım, duman)", ocak != null and ocak.model != null \
+			and ocak.fire.emitting and ocak.embers.emitting and ocak.smoke.emitting, "")
+	room = await _enter(&"kok_agzi", Vector3(-8.0, 0.1, 0.0))
+	var koca: KocabasNpc = null
+	for c: Node in room.get_children():
+		if c is KocabasNpc:
+			koca = c as KocabasNpc
+	_check("kocabaş: Kök Ağzı'nda dinleniyor (model)", koca != null and koca.model != null, "")
+	if koca != null and koca.model != null:
+		var neck := koca.model.bone("tripo__Spine_1")
+		_teleport(Vector3(-10.0, 0.1, 0.0))
+		await _frames(60)
+		var a := koca.model.bone_pose_angle(neck)
+		_teleport(Vector3(2.0, 0.1, 0.0))
+		await _frames(90)
+		var b := koca.model.bone_pose_angle(neck)
+		_check("kocabaş: boynu oyuncuyu izliyor", absf(a - b) > 0.05, "açı %.2f → %.2f" % [a, b])
+	room = await _enter(&"kokyiyen_ini", Vector3(4.0, 0.1, 0.0))
+	var boss := room.get("boss") as Rooteater
+	_check("kökyiyen: model bağlı", boss != null and boss.model != null and boss.model.skeleton != null, "")
+	if boss != null and boss.model != null:
+		var y_hidden := boss.model.position.y
+		boss.start_fight(_player)
+		await _frames(150)
+		_check("kökyiyen: girişte yerden yükseliyor", boss.model.position.y > y_hidden + 5.0,
+				"y %.1f → %.1f" % [y_hidden, boss.model.position.y])
+		var tail := boss.model.bone("tripo__Tail_3")
+		_check("kökyiyen: kuyruk/gövde yordamsal kıvrılıyor", boss.model.bone_pose_angle(tail) > 0.02, "")
+
+
+func _test_dressing_and_fog() -> void:
+	var room := await _enter(&"spor_mahzeni", Vector3(-8.0, 0.1, 0.0)) as GreyboxRoom
+	var d := room.dressing
+	_check("ortam: ot/eğrelti/mantar serpiştirildi", d != null and d.tuft_count > 30, "tutam=%d" % (d.tuft_count if d else 0))
+	_check("ortam: tavan altına sarkan kökler", d != null and d.strand_count > 2, "saçak=%d" % (d.strand_count if d else 0))
+	_check("ortam: süzülen sporlar", d != null and d.motes != null and d.motes.emitting, "")
+	var wind := 0
+	var push_ok := false
+	for f: Node in get_tree().get_nodes_in_group(RoomDressing.FOLIAGE_GROUP):
+		var m := (f as MeshInstance3D).material_override as ShaderMaterial
+		var ws: Variant = m.get_shader_parameter(&"wind_strength") if m != null else null
+		if ws != null and float(ws) > 0.0:
+			wind += 1
+			push_ok = push_ok or (m.get_shader_parameter(&"push_origin") as Vector3).distance_to(_player.global_position) < 0.5
+	_check("ortam: bitkiler stilize + rüzgârlı shader", wind > 20 and _count_unstylized(d) == 0, "rüzgârlı=%d" % wind)
+	await _frames(2)
+	_check("ortam: oyuncu konumu bitkilere iletiliyor (yanından geçince eğilir)", push_ok, "")
+	var fog: FogPatch = null
+	for c: Node in room.get_children():
+		if c is FogPatch:
+			fog = c as FogPatch
+	_check("sis: odada sis öbeği", fog != null and fog.puff_count() >= 8, "")
+	if fog == null:
+		return
+	var center := fog.global_position + Vector3(0.0, -fog.size.y * 0.5 + 0.1, 0.0)
+	center.z = 0.0
+	var before := fog.density_near(center + Vector3.UP * 0.8)
+	_teleport(center + Vector3.LEFT * 3.0)
+	Input.action_press(&"move_right")
+	for i in 30:
+		await _frames(1)
+	Input.action_release(&"move_right")
+	await _frames(30)
+	var inside := fog.density_near(_player.global_position + Vector3.UP * 0.8)
+	var disp := fog.mean_displacement(_player.global_position + Vector3.UP * 0.8, 1.5)
+	_check("sis: içinden geçince dağılıyor (incelir + itilir)", inside < before * 0.6 and disp > 0.3,
+			"yoğunluk %.2f → %.2f, itilme %.2f m" % [before, inside, disp])
+	var spot := _player.global_position
+	# yürüyen sürüngen oyuncuyu kapıdan itip odayı değiştirmesin (sis nesnesi silinirdi)
+	for e: Node in get_tree().get_nodes_in_group(Enemy.GROUP):
+		(e as Node).queue_free()
+	_teleport(Vector3(-9.0, 0.1, 0.0))
+	await _frames(400)
+	if not is_instance_valid(fog):
+		_check("sis: oyuncu gidince yavaşça geri toplanıyor", false, "oda değişti")
+		return
+	_check("sis: oyuncu gidince yavaşça geri toplanıyor", fog.density_near(spot + Vector3.UP * 0.8) > 0.8,
+			"yoğunluk=%.2f" % fog.density_near(spot + Vector3.UP * 0.8))
+
+
+func _test_land_dust() -> void:
+	await _enter(&"spor_mahzeni", Vector3(-8.0, 6.0, 0.0))
+	var n0 := _player.land_dust_count
+	for i in 90:
+		await _frames(1)
+		if _player.is_on_floor():
+			break
+	await _frames(2)
+	_check("fx: yüksekten inişte toz pufu", _player.land_dust_count > n0, "")
 
 
 # ---------------------------------------------------------------- Yardımcılar
