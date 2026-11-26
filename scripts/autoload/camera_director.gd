@@ -8,6 +8,8 @@ extends Node
 ## Geçiş sırasında zaman yavaşlaması (docs/05: 0.85x, 0.3 sn). TimeScale.slowmo_enabled ile kapanır.
 @export var transition_slowmo_scale: float = 0.85
 @export var transition_slowmo_time: float = 0.3
+## Ekran sarsıntısı açık mı (ayarlar menüsü gelince oradan değişir; erişilebilirlik).
+@export var shake_enabled: bool = true
 ## Bu eşiğin altındaki girdi "bırakılmış" sayılır.
 @export var input_release_threshold: float = 0.15
 
@@ -48,6 +50,16 @@ func reset_to_side() -> void:
 		rig.snap_to_target()
 	if changed:
 		EventBus.camera_mode_changed.emit(mode)
+
+
+## Ekran sarsıntısı: `amount` 0..1 travma ekler (0.15 hafif vuruş, 0.4 hasar, 0.7 boss).
+func shake(amount: float) -> void:
+	if shake_enabled and is_instance_valid(rig):
+		rig.add_trauma(amount)
+
+
+func get_trauma() -> float:
+	return rig.trauma if is_instance_valid(rig) else 0.0
 
 
 func is_side_mode() -> bool:

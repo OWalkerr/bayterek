@@ -206,6 +206,42 @@ static func falling_leaves(box: Vector3, color: Color = Color("5e8c4a"), amount:
 	return p
 
 
+## Hız izi: hızlı sallanmada gövdeden geriye akan ince, uzun rüzgâr çizgileri (yerel uzay değil →
+## arkada iz bırakır). `direction` her kare hız yönünün tersine ayarlanır, `emitting` açılıp kapanır.
+static func speed_streaks(color: Color = Color("e8f4ef")) -> CPUParticles3D:
+	var p := _base(18, 0.35, true, 0.09)
+	p.local_coords = false
+	p.emitting = false
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.6
+	p.spread = 8.0
+	p.initial_velocity_min = 2.0
+	p.initial_velocity_max = 4.0
+	p.gravity = Vector3.ZERO
+	p.particle_flag_align_y = true
+	p.scale_amount_min = 0.8
+	p.scale_amount_max = 1.2
+	# İnce uzun çizgi: Y ekseninde uzatılmış dörtgen (align_y ile hız yönüne döner)
+	# Billboard yerine sabit dörtgen: align_y onu hız yönüne çevirir (yan kamerada XY düzlemi)
+	var quad := p.mesh as QuadMesh
+	quad.size = Vector2(0.06, 0.9)
+	var m := (particle_material(true).duplicate() as StandardMaterial3D)
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_DISABLED
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	quad.material = m
+	p.color_ramp = _ramp([Color(color, 0.0), Color(color, 0.55), Color(color, 0.0)],
+			PackedFloat32Array([0.0, 0.3, 1.0]))
+	return p
+
+
+## Kendi tohumlu rastgelesini kullan: oyun mantığının global RNG dizisini (düşman/boss rastgeleleri,
+## bot testleri) bozmasın. Sık tetiklenen oyuncu efektleri (adım, zıplama tozu, hız izi) için.
+static func isolate_random(p: CPUParticles3D, seed_value: int) -> CPUParticles3D:
+	p.use_fixed_seed = true
+	p.seed = seed_value
+	return p
+
+
 ## Dünyaya bir kerelik efekt bırakır ve bitince siler.
 static func spawn_oneshot(parent: Node, fx: CPUParticles3D, at: Vector3) -> void:
 	if parent == null or not parent.is_inside_tree():

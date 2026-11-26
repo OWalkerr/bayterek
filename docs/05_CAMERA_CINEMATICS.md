@@ -32,6 +32,11 @@
 - **Sallanma zinciri:** Hız > 9 m/s ise kamera 2 m geri çekilir.
 - **Oda sınırları:** Her oda bir AABB tanımlar (`GreyboxRoom.bounds`; boşsa statik kutulardan otomatik + 1 m pay). SIDE'da görüş dikdörtgeni (mesafe × tan(FOV/2) × en-boy) bu sınırın dışına taşmaz; oda görüşten darsa ortalanır. DEPTH'te sınır uygulanmaz.
 
+## Ekran sarsıntısı (2026-11-26)
+- `CameraDirector.shake(travma)` — travma 0..1 birikir, sarsıntı = travma² × 0.35 m, saniyede 1.8 söner (gerçek zamanla, hit-stop sırasında da). `CameraRig` bunu `Camera3D.h_offset/v_offset`'e yazar → kamera dönüşümüne dokunmaz, Phantom Camera ve yerleşik arka uçta aynı çalışır.
+- Tetikleyenler `Juice` autoload'unda (docs/08): düşmana vuruş 0.12 × hasar, düşman ölümü 0.22, oyuncu hasarı 0.45, çürük sarmaşık kopması 0.25, boss faz değişimi 0.6, boss yenilgisi 0.8, sert iniş (> 13 m/s) 0.08 → 0.3.
+- `CameraDirector.shake_enabled = false` ile kapanır (ayarlar menüsüne bağlanacak — erişilebilirlik).
+
 ## Boss kamerası (M6)
 - Kökyiyen arenası tek bir DEPTH bölgesi (yaw 0, arena ön kenarı kameraya açık; görünmez çarpışma duvarı). Faz 3'te `SceneRouter.move_player_with_fade()` → kuyu (bölge dışı) → `reset_to_side()`.
 - Intro (C03 greybox): oyuncu 2.5 sn kilitli, boss ortadan yükselir, alt-orta isim kartı. Faz geçişlerinde kısa yavaşlama (`TimeScale`): Faz 1→2 0.6x/0.5 sn, yenilgi 0.4x/0.8 sn.

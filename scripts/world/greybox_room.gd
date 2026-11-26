@@ -38,6 +38,15 @@ var parallax: ParallaxBackdrop
 ## Parallax kurulunca arka duvar kutularının görüntüsü gizlensin mi. Arkasında sır saklayan
 ## (illusion_box ile örtülen) odalar false yapar: duvar kalır, parallax yalnız üstünde görünür.
 var parallax_hides_backdrops: bool = true
+## Kutular dokulu mu (false = düz renk greybox). Doku tekrarı: 1/m.
+var skin_boxes: bool = true
+var skin_scale: float = 0.14
+## Doku gri tonunun kutu rengine etkisi (0 = düz renk, 1 = tam).
+var skin_contrast: float = 1.1
+
+## Kutu yüzü dokusu: kodla üretilen dikişsiz, boyalı görünümlü kök/kaya gürültüsü (gri; rengi kutu verir).
+## Bütün odalar paylaşır. Gerçek dikişsiz doku gelirse burası `load(...)` olur (docs/07 §6.1).
+static var _skin_texture: Texture2D = null
 
 
 func _ready() -> void:
@@ -95,15 +104,83 @@ func box(center: Vector3, size: Vector3, color: Color) -> StaticBody3D:
 	body.add_child(col)
 	var mesh := BoxMesh.new()
 	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.95
-	mesh.material = mat
+	mesh.material = box_material(color)
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	body.add_child(mi)
 	add_child(body)
 	return body
+
+
+## Kutu materyali: düz renk + (skin_boxes açıksa) dünya uzayında üç düzlemli kök dokusu.
+## Stylizer bunu stilize shader'ın use_triplanar yoluna çevirir.
+func box_material(color: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.roughness = 0.95
+	if skin_boxes:
+		mat.albedo_texture = skin_texture()
+		mat.uv1_triplanar = true
+		mat.uv1_world_triplanar = true
+		mat.uv1_scale = Vector3.ONE * skin_scale
+		mat.set_meta(Stylizer.META_TRIPLANAR_MIX, 0.0)
+		mat.set_meta(Stylizer.META_TRIPLANAR_CONTRAST, skin_contrast)
+	return mat
+
+
+static func skin_texture() -> Texture2D:
+	if _skin_texture != null:
+		return _skin_texture
+	# Dikişsiz Voronoi (halka ızgara): yuvarlak taş/kök plakaları. Her plaka kendi tonunda, kenarlarda
+	# pah + koyu oluk; içinde hafif boya lekesi. Gri üretilir, rengi kutu verir.
+	const SIZE := 256
+	const GRID := 7
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1907
+	var pts: Array[Vector2] = []
+	var tones: PackedFloat32Array = []
+	for gy in GRID:
+		for gx in GRID:
+			pts.append(Vector2(gx + rng.randf_range(0.15, 0.85), gy + rng.randf_range(0.15, 0.85)))
+			tones.append(rng.randf())
+	var grain := FastNoiseLite.new()
+	grain.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	grain.seed = 3
+	grain.frequency = 0.05
+	var g_img := grain.get_seamless_image(SIZE, SIZE, false, false, 0.1, true)
+	var img := Image.create(SIZE, SIZE, false, Image.FORMAT_L8)
+	var cell := float(SIZE) / GRID
+	for y in SIZE:
+		for x in SIZE:
+			var g := g_img.get_pixel(x, y).r
+			# Hafif bükme: düz çizgili hücre kenarları organikleşir
+			var pp := Vector2(x, y) / cell + Vector2(g - 0.5, 0.5 - g) * 0.35
+			var cx := int(floor(pp.x))
+			var cy := int(floor(pp.y))
+			var f1 := 99.0
+			var f2 := 99.0
+			var tone := 0.0
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					var nx := cx + ox
+					var ny := cy + oy
+					var idx := posmod(ny, GRID) * GRID + posmod(nx, GRID)
+					var pt := pts[idx] + Vector2(nx - posmod(nx, GRID), ny - posmod(ny, GRID))
+					var d := pp.distance_to(pt)
+					if d < f1:
+						f2 = f1
+						f1 = d
+						tone = tones[idx]
+					elif d < f2:
+						f2 = d
+			var edge := f2 - f1
+			var v := lerpf(0.5, 0.78, tone) + (g - 0.5) * 0.14
+			v *= lerpf(0.55, 1.0, smoothstep(0.04, 0.22, edge))   # pah
+			v *= lerpf(0.35, 1.0, smoothstep(0.0, 0.05, edge))    # oluk
+			img.set_pixel(x, y, Color(v, v, v))
+	img.generate_mipmaps()
+	_skin_texture = ImageTexture.create_from_image(img)
+	return _skin_texture
 
 
 ## Üst yüzeyi `top_y` olan, x1→x2 arası platform (derinlik `depth`).
@@ -125,10 +202,7 @@ func backdrop(x1: float, x2: float, y1: float, y2: float, color: Color = C_ROOT)
 func illusion_box(center: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color.lightened(0.04)
-	mat.roughness = 0.95
-	mesh.material = mat
+	mesh.material = box_material(color.lightened(0.04))
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.position = center

@@ -17,6 +17,8 @@ const LIVE_FIELDS: Array = [
 	["coyote_time", 0.0, 0.3, 0.01],
 	["jump_buffer", 0.0, 0.3, 0.01],
 	["max_fall_speed", 8.0, 40.0, 0.5],
+	["apex_gravity_mult", 0.2, 1.0, 0.01],
+	["corner_correction", 0.0, 0.5, 0.01],
 	["grab_radius", 0.5, 3.0, 0.05],
 	["swing_gravity", 8.0, 50.0, 0.5],
 	["swing_pump", 0.0, 25.0, 0.25],
@@ -59,6 +61,13 @@ const LIVE_FIELDS: Array = [
 @export var coyote_time: float = 0.12
 @export var jump_buffer: float = 0.12
 @export var max_fall_speed: float = 22.0
+## Tepe asılması: zıplama tuşu basılıyken dikey hız bu eşiğin altındaysa (|vy|) yerçekimi azalır.
+## Zıplamanın tepesinde kısa bir "süzülme" hissi verir, iniş hızını değiştirmez (docs/03 §1.2).
+@export var apex_speed_threshold: float = 1.6
+@export var apex_gravity_mult: float = 0.55
+## Köşe düzeltme: yükselirken kafa bir kenara çarparsa en çok bu kadar (m) yana kaydırılıp
+## yükseliş sürdürülür (Celeste tarzı affedicilik).
+@export var corner_correction: float = 0.3
 
 @export_group("Sallanma")
 @export var auto_grab: bool = true
@@ -152,6 +161,11 @@ const LIVE_FIELDS: Array = [
 
 @export_group("Görsel")
 @export var turn_speed: float = 14.0
+## Koşarken adım aralığı (sn, tam koşu hızında) ve adım için gereken en düşük hız oranı.
+@export var footstep_interval: float = 0.3
+@export var footstep_min_speed_ratio: float = 0.6
+## Sallanırken bu hızın üstünde hız izi (rüzgâr çizgileri) belirir (m/s).
+@export var swing_trail_speed: float = 7.0
 
 @export_group("Güvenlik")
 @export var kill_y: float = -15.0

@@ -58,6 +58,8 @@
 - Can kaybında ekran kenarında kısa mor damar efekti.
 - Yetenek kazanımında Öz akışı karakterin damarlarında parlar.
 - Ocak'a oturunca müzik yumuşar, ateş sesi.
+- **Uygulandı (2026-11-26, `Juice` autoload):** EventBus olaylarından ses + ekran sarsıntısı (docs/05) + kol titreşimi. Zıplamada ve koşu adımlarında küçük toz, hızlı sallanmada (> 7 m/s) gövdeden geriye akan rüzgâr çizgileri (`FxLibrary.speed_streaks`) ve hızla açılan rüzgâr sesi. Hata ayıklama yazısı ve oda süresi varsayılan gizli (F1).
+- **Ses (geçici):** `SfxBank` 16 sesi kodla sentezler (zıplama, iniş, adım, kamçı, vuruş, ölüm, hasar, tutunma, bırakma, mükemmel bırakma, toplama, iyileşme, kopma, gümbürtü, tırmanma, sallanma rüzgârı döngüsü). Gerçek ses gelince `assets/audio/sfx/<ad>.ogg|wav` olarak konur, kod değişmez. Oyuncu efektleri kendi tohumlu rastgelesini kullanır (`FxLibrary.isolate_random`) → global RNG ve bot testleri etkilenmez.
 - **Uygulandı (M7):** yüksekten inişte toz pufu (düşüş > 7 m/s, `Player.land_dust_speed`), düşman ölümünde ışıyan puf, Ocak'ta hareketli ateş (alev + kıvılcım + duman parçacıkları, titreyen ve hafifçe kayan ışık), kanca çiçeği hedeflenince hale + nabız. Parçacıklar `FxLibrary` (CPUParticles3D, dokular kodla).
 
 ## Ortam Canlılığı (M7)

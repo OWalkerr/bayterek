@@ -88,6 +88,7 @@ func _physics_process(delta: float) -> void:
 	_last_air_vy = minf(_last_air_vy, velocity.y) if state == State.AIR else 0.0
 	(_states[state] as PlayerState).physics_update(delta)
 	_update_visual(delta)
+	_update_swing_trail()
 	_check_fall_out()
 
 
@@ -108,6 +109,84 @@ func _spawn_land_dust(strength: float) -> void:
 	FxLibrary.spawn_oneshot(get_parent(), fx, global_position + Vector3.UP * 0.05)
 
 
+const LAND_EVENT_SPEED: float = 3.0
+var _footstep_timer: float = 0.0
+var footstep_count: int = 0
+var jump_count: int = 0
+var corner_corrections: int = 0
+var _swing_trail: CPUParticles3D = null
+
+
+## Yerden zıplama anı (MoveState çağırır): küçük toz + olay.
+func on_ground_jump() -> void:
+	jump_count += 1
+	var fx := FxLibrary.isolate_random(FxLibrary.dust_burst(Color("9a8aa0"), 8, 0.3), 7000 + jump_count)
+	fx.initial_velocity_max = 1.4
+	fx.direction = Vector3.UP
+	fx.spread = 70.0
+	FxLibrary.spawn_oneshot(get_parent(), fx, global_position + Vector3.UP * 0.05)
+	EventBus.player_jumped.emit(global_position)
+
+
+## Koşu adımları: hıza göre aralıklı küçük toz + olay (ses Juice'ta).
+func update_footsteps(delta: float) -> void:
+	var speed := Vector2(velocity.x, velocity.z).length()
+	if speed < tuning.run_speed * tuning.footstep_min_speed_ratio:
+		_footstep_timer = 0.0
+		return
+	_footstep_timer -= delta * speed / tuning.run_speed
+	if _footstep_timer > 0.0:
+		return
+	_footstep_timer = tuning.footstep_interval
+	footstep_count += 1
+	var fx := FxLibrary.isolate_random(FxLibrary.dust_burst(Color("9a8aa0"), 4, 0.22), 9000 + footstep_count)
+	fx.initial_velocity_max = 0.8
+	fx.direction = Vector3(-signf(velocity.x), 1.0, 0.0)
+	fx.spread = 40.0
+	FxLibrary.spawn_oneshot(get_parent(), fx, global_position + Vector3.UP * 0.05)
+	EventBus.player_footstep.emit(global_position)
+
+
+## Köşe düzeltme: yükselirken tavan kenarına çarpıldıysa yana küçük kaydırmayla yükselişi sürdür.
+## `pre_velocity` = move_and_slide öncesi hız. Kaydırma yalnız serbest bir konum bulunursa yapılır.
+func try_corner_correction(pre_velocity: Vector3, delta: float) -> bool:
+	if tuning.corner_correction <= 0.0 or pre_velocity.y <= 0.0 or not is_on_ceiling():
+		return false
+	var rise := Vector3(0.0, pre_velocity.y * delta, 0.0)
+	var axis := Vector3.RIGHT if CameraDirector.is_side_mode() else facing.normalized()
+	var steps := 6
+	for i in range(1, steps + 1):
+		var d := tuning.corner_correction * float(i) / steps
+		for sgn: float in [1.0, -1.0]:
+			var shifted := global_transform.translated(axis * d * sgn)
+			if test_move(global_transform, axis * d * sgn):
+				continue
+			if test_move(shifted, rise):
+				continue
+			global_position += axis * d * sgn
+			velocity.y = pre_velocity.y
+			corner_corrections += 1
+			return true
+	return false
+
+
+## Sallanırken hız izi: el çevresinden geriye akan ince rüzgâr çizgileri (hızla yoğunlaşır).
+func _update_swing_trail() -> void:
+	var speed := velocity.length() if state == State.SWING else 0.0
+	var active := speed > tuning.swing_trail_speed
+	if _swing_trail == null:
+		if not active:
+			return
+		_swing_trail = FxLibrary.isolate_random(FxLibrary.speed_streaks(), 4242)
+		add_child(_swing_trail)
+	_swing_trail.emitting = active
+	if active:
+		_swing_trail.position = Vector3.UP * BODY_CENTER
+		_swing_trail.direction = -velocity.normalized()
+		# Hızlandıkça çizgiler daha hızlı akar
+		_swing_trail.speed_scale = clampf(speed / tuning.swing_trail_speed, 1.0, 2.0)
+
+
 ## Tek durum değişim noktası. Aynı durum nesnesine geçişte (GROUND↔AIR) enter/exit çağrılmaz.
 func change_state(new_state: State) -> void:
 	if new_state == state:
@@ -118,8 +197,12 @@ func change_state(new_state: State) -> void:
 	if old_obj != new_obj:
 		old_obj.exit(new_state)
 	state = new_state
-	if old_state == State.AIR and new_state == State.GROUND and _last_air_vy < -land_dust_speed:
-		_spawn_land_dust(clampf(-_last_air_vy / 18.0, 0.4, 1.0))
+	if old_state == State.AIR and new_state == State.GROUND:
+		if _last_air_vy < -land_dust_speed:
+			_spawn_land_dust(clampf(-_last_air_vy / 18.0, 0.4, 1.0))
+		if _last_air_vy < -LAND_EVENT_SPEED:
+			EventBus.player_landed.emit(-_last_air_vy)
+		_footstep_timer = 0.0
 	_last_air_vy = 0.0
 	if old_obj != new_obj:
 		new_obj.enter(old_state)
@@ -238,6 +321,10 @@ func rail_velocity_z() -> float:
 
 func apply_gravity(delta: float) -> void:
 	var g := tuning.gravity_up if velocity.y > 0.0 else tuning.gravity_down
+	# Tepe asılması: tuş basılıyken zıplamanın tepesinde yerçekimi azalır
+	if state == State.AIR and (jump_held or Input.is_action_pressed(&"jump")) \
+			and absf(velocity.y) < tuning.apex_speed_threshold:
+		g *= tuning.apex_gravity_mult
 	velocity.y = maxf(velocity.y - g * delta, -tuning.max_fall_speed)
 
 

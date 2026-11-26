@@ -4,6 +4,12 @@ extends Node
 @warning_ignore_start("unused_signal")
 signal player_state_changed(new_state: int)
 signal player_respawned(position: Vector3)
+## Yerden zıplama (toz + ses). Tırmanmadan/sarmaşıktan ayrılma kendi olaylarında.
+signal player_jumped(at: Vector3)
+## Havadan yere iniş; `fall_speed` = inişten önceki en büyük düşüş hızı (m/s, pozitif).
+signal player_landed(fall_speed: float)
+## Koşarken adım (toz + ses).
+signal player_footstep(at: Vector3)
 signal vine_grabbed(anchor: Node3D)
 signal vine_released(anchor: Node3D, perfect: bool)
 signal vine_broken(anchor: Node3D)

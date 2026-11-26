@@ -11,6 +11,10 @@ const META_SKIP: StringName = &"no_stylize"
 const META_SOURCE: StringName = &"stylized_from"
 ## Rüzgârlı bitki materyali: {strength, height, speed, push} → shader rüzgâr parametreleri.
 const META_WIND: StringName = &"wind"
+## Üç düzlemli dokuda dokunun kendi renginin payı (0..1); yoksa shader varsayılanı.
+const META_TRIPLANAR_MIX: StringName = &"triplanar_mix"
+## Üç düzlemli doku parlaklığının kutu rengine etkisi (0 = düz renk).
+const META_TRIPLANAR_CONTRAST: StringName = &"triplanar_contrast"
 
 static var palette: RegionPalette = null
 static var _cache: Dictionary = {}     # kaynak materyal instance_id -> ShaderMaterial
@@ -56,6 +60,14 @@ static func stylize_material(source: Material) -> Material:
 	if std.albedo_texture != null:
 		mat.set_shader_parameter(&"albedo_texture", std.albedo_texture)
 		mat.set_shader_parameter(&"use_texture", true)
+		if std.uv1_triplanar:
+			# Dünya uzayı üç düzlemli doku (greybox kutuları): ölçek uv1_scale.x (1/m)
+			mat.set_shader_parameter(&"use_triplanar", true)
+			mat.set_shader_parameter(&"triplanar_scale", std.uv1_scale.x)
+			if std.has_meta(META_TRIPLANAR_MIX):
+				mat.set_shader_parameter(&"triplanar_color_mix", float(std.get_meta(META_TRIPLANAR_MIX)))
+			if std.has_meta(META_TRIPLANAR_CONTRAST):
+				mat.set_shader_parameter(&"triplanar_contrast", float(std.get_meta(META_TRIPLANAR_CONTRAST)))
 	if std.emission_enabled:
 		mat.set_shader_parameter(&"emission_color", std.emission)
 		mat.set_shader_parameter(&"emission_energy", std.emission_energy_multiplier)

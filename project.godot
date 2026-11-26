@@ -19,6 +19,7 @@ TimeScale="*res://scripts/autoload/time_scale.gd"
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 CameraDirector="*res://scripts/autoload/camera_director.gd"
 SceneRouter="*res://scripts/autoload/scene_router.gd"
+Juice="*res://scripts/autoload/juice.gd"
 
 [display]
 
