@@ -23,3 +23,8 @@ func _build() -> void:
 	add_child(sign)
 	glow(Vector3(12.0, 0.3, -1.0), Color("5a1e5c"))
 	glow(Vector3(15.0, 0.3, 1.0), Color("5a1e5c"))
+	# Varlık seti 2: Ocak'ın yanında mangal, eşik boyunca balbal taşları, kök kapısının önünde mangal
+	brazier(Vector3(1.6, 0.0, -1.5))
+	totem(Vector3(-5.0, 0.0, -1.8), 10.0)
+	totem(Vector3(10.0, 0.0, -1.8), -12.0, 1.1)
+	brazier(Vector3(17.0, 0.0, -1.6))

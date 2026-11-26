@@ -15,6 +15,7 @@ var _chase_floor: StaticBody3D
 
 
 func _build() -> void:
+	parallax_preset = &"arena"
 	# ---- Arena
 	box(Vector3(20.0, -1.0, -9.0), Vector3(26.0, 2.0, 26.0), C_CAVE)        # zemin x 7 → 33, z -22 → 4
 	box(Vector3(4.0, -1.0, 0.0), Vector3(8.0, 2.0, 4.0), C_BARK)            # giriş koridoru x 0 → 8

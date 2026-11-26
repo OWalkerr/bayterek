@@ -11,3 +11,8 @@ func _build() -> void:
 	grapple_flower(Vector3(7.0, 10.0, 0.0))
 	glow(Vector3(12.0, 5.9, -1.0), C_SAP)
 	glow(Vector3(-6.0, 0.4, -1.5))
+	# Varlık seti 2: sunağı balbal taşları ve mangallar çevreler
+	totem(Vector3(-2.2, 0.0, -1.8), 15.0)
+	totem(Vector3(6.2, 0.0, -1.8), -15.0, 0.9)
+	brazier(Vector3(-0.6, 0.0, -1.3))
+	brazier(Vector3(4.6, 0.0, -1.3))

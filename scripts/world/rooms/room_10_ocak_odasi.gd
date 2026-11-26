@@ -5,6 +5,7 @@ extends GreyboxRoom
 
 
 func _build() -> void:
+	parallax_preset = &"sky"   # tavan açıklığından gök deliği görünür (Umay ipucu)
 	backdrop(-13.0, 13.0, -2.0, 14.0, C_ROOT)
 	platform(-13.0, 13.0, 0.0, 2.0, C_BARK, 4.0)
 	box(Vector3(-12.0, 8.5, 0.0), Vector3(2.0, 11.0, 4.0), C_ROOT)    # sol duvar (kapının üstü, y 3 →)
@@ -24,3 +25,10 @@ func _build() -> void:
 	decor(E_ROCK, Vector3(10.0, 0.0, -2.3), -20.0, 0.7)
 	fog(Vector3(-7.0, 0.0, -0.3), Vector3(6.0, 1.0, 3.0))
 	fog(Vector3(7.0, 0.0, -0.3), Vector3(6.0, 1.0, 3.0))
+	# Varlık seti 2: Ocak'ın iki yanında mangal, duvarlarda meşale, tavandan asılı ruh kandilleri
+	brazier(Vector3(-4.5, 0.0, -1.6))
+	brazier(Vector3(4.5, 0.0, -1.6))
+	torch(Vector3(-10.95, 4.0, -1.2), 90.0)
+	torch(Vector3(10.95, 4.0, -1.2), -90.0)
+	spirit_lantern(Vector3(-8.0, 13.0, -1.0), 1.2)
+	spirit_lantern(Vector3(8.5, 13.0, -1.2), 0.7)

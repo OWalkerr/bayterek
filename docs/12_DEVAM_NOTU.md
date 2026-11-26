@@ -4,7 +4,7 @@
 > sonra `docs/09_ROADMAP.md`. Kurallar: `CLAUDE.md`.
 
 ## 1. Durum özeti
-- **Aktif milestone: M7 (Sanat geçişi)** — büyük kısmı bitti, eksik varlıklar bekleniyor.
+- **Aktif milestone: M7 (Sanat geçişi)** — büyük kısmı bitti; üçüncü teslim (parallax + prop'lar) eklendi, boss parçaları ve düşman varyasyonları bekleniyor.
 - M0–M6 tamam: hareket, sallanma, savaş, kamera (yan + derinlik), 15 oda, kapılar, Ocak/kayıt, harita, kanca, sır oda, Kökyiyen boss'u.
 - Son commit: `c1e10e3` (main). Web build: https://owalkerr.github.io/bayterek/ (sürüm etiketi `c1e10e3-…`).
 - Testler (hepsi yeşil): validate_scripts, test_movement, test_m1…test_m7, model_check, test_m3 (rig arka ucu).
@@ -19,33 +19,33 @@
 | Kökyiyen | `bosses/boss_kokyiyen.glb` | `Rooteater` |
 | Kanca çiçeği, Ocak | `props/` | `GrappleFlower`, `Ocak` (alev/kıvılcım/duman) |
 | Çevre seti (17) | `environment/` | `RoomDressing` otomatik yerleşim + `GreyboxRoom.decor()` elle |
+| Sarkan kök a/b | `environment/env_hanging_root_3m_*` | `RoomDressing._hang_strands` (yalnız süs, oda başına ≤ 8) |
+| Mangal, meşale | `props/prop_brazier`, `prop_torch_wall` | `FireProp` — `GreyboxRoom.brazier()/torch()` (Ocak Odası, Sunak, Eşik) |
+| Balbal, ruh kandili | `props/prop_totem_stone`, `prop_spirit_lantern` | `GreyboxRoom.totem()`, `SpiritLantern` |
+| Kut parçası, Öz kristali, Sunak | `props/` | `Collectible`, `RoomGoal`, `AbilityShrine` |
+| Parallax (10 görsel) | `assets/textures/backgrounds/` | `ParallaxBackdrop` — `GreyboxRoom.parallax_preset` |
 
 İnsansı olmayanların hepsi **kodla canlandırılıyor** (`ModelVisual.add_rotation`), klip yok.
 
 ## 3. Bekleyen işler (sırayla)
-1. **Kullanıcıdan gelecek varlıklar** (prompt'lar `docs/11_ASSET_PROMPTS.md`):
-   - Not (2026-11-26): kullanıcı "yükledim" dedi ama GitHub'a hiçbir dosya gelmedi (dallar ve PR'lar da boş) — PC'de klasöre koyup push etmemiş olabilir.
-   - [ ] Parallax görselleri → `assets/textures/backgrounds/` (`bg_kokdibi_l0_far.jpg`, `_l1_roots.png`, `_l2_mid.png`, `_l3_glow`, `fg_kokdibi_top/bottom.png`, `_lightshafts`, `_cave_far.jpg`, `bg_kokyiyen_arena.jpg`, `_sky_hole.png`)
-   - [ ] Sarkan kök `env_hanging_root_3m_a/b.glb`
-   - [ ] Prop'lar: `prop_brazier`, `prop_torch_wall`, `prop_totem_stone`, `prop_kut_shard`, `prop_oz_crystal`, `prop_ability_shrine`, `prop_heavy_boulder`, `prop_root_gate`, (isteğe bağlı) `prop_rotten_vine`, `prop_spirit_lantern`, `prop_feather_pendant`
-   - [ ] Boss parçaları: `boss_kokyiyen_maw`, `boss_rot_sac`, `boss_root_rock`, `boss_burrow_debris`
+1. **Üçüncü teslim oyunda (2026-11-26, dal `claude/yeni-varliklar`):** parallax (`ParallaxBackdrop`), sarkan kök a/b (yalnız süs — kullanıcı kararı), mangal/meşale (`FireProp`), balbal, ruh kandili (`SpiritLantern`), Kut parçası / Öz kristali / Sunak modelleri. Ayrıntı: docs/07 "Üçüncü teslim".
+   - Not: kullanıcının PC'sindeki `Masaüstü\BAYTEREK` bir git deposu değil (ZIP). Yeni varlıklar oraya konuyor → bulut oturumu cihaz klasöründen kopyalayıp PR açıyor. `Masaüstü\BAYTEREK1` ham Tripo çıktıları (eğrelti/perde ~2M üçgen, kullanılamaz).
+2. **Hâlâ beklenen varlıklar** (prompt'lar `docs/11_ASSET_PROMPTS.md`):
+   - [ ] Boss parçaları: `boss_kokyiyen_maw` → `RisingMaw`, `boss_rot_sac` → `BossWeakPoint`, `boss_root_rock` → `RootRock`, `boss_burrow_debris`
    - [ ] Düşman varyasyonları: `enm_rot_crawler_b`, `enm_spore_bloater_b`
-   - [ ] Eğrelti ve sarmaşık perdesini 8k üçgenle yeniden üretmek (şu an 19k / 15.5k, istisna tablosunda)
-2. **Gelince yapılacak kod:**
-   - **Parallax sistemi (henüz yazılmadı):** her bölge için `ParallaxBackdrop` düğümü — görselleri kameranın arkasında −12/−25/−45/−80 m'deki dev düzlemlere (unshaded, saydam PNG; L3 ve ışık huzmesi additive), FG katmanı +4 m önde; yatayda döşenir (UV tekrar). Parallax gerçek 3D derinlikten gelir. Derinlik (mağara) modunda gizle ya da yalnız uzak katmanları göster. docs/11 §0.
-   - **Mangal / meşale:** model + `FxLibrary.fire/embers/smoke` + titreyen ışık (Ocak'taki `_build_model_visual` örneği). Odalara `GreyboxRoom` yardımcısı (`brazier(at)`, `torch(at, facing)`).
-   - **Oyun nesneleri:** `Collectible` (Kut parçası) → `prop_kut_shard`, `RoomGoal` → `prop_oz_crystal`, `AbilityShrine` → `prop_ability_shrine`, `RootRock` → `boss_root_rock`, `BossWeakPoint` → `boss_rot_sac`, `RisingMaw` → `boss_kokyiyen_maw`. Kalıp: `ModelVisual.spawn(...)`, greybox yedeği kalsın (`ResourceLoader.exists`).
-   - Sarkan kökler → `RoomDressing._hang_strands` içinde prosedürel iplik yerine model (sarkık rüzgâr modu `&"hang"`).
-3. **Açık tasarım soruları** (kullanıcıya sorulacak):
+   - [ ] Eğrelti ve sarmaşık perdesi 8k üçgenle (şu an 19k / 15.5k, istisna tablosunda)
+3. **Gelen ama henüz kullanılmayanlar:** `prop_root_gate` (yetenek kapısı görseli; açılma mekaniği yok), `prop_heavy_boulder` (Öz Çekimi kapısı, M8), `prop_rotten_vine` (çürük sarmaşık kinematik ip; sert model sallanmaya uymuyor), `prop_feather_pendant` (sinematik/menü).
+4. **Açık tasarım soruları** (kullanıcıya sorulacak):
    - Kapan Çiçek ve Kök Yılanı başka odalara da dağıtılsın mı? (Botların geçtiği odalarda bot yolları ayarlanmalı.)
    - `env_root_ledge_1m_a` (çıkıntı) nerede kullanılsın — tırmanma duvarlarında görsel mi, yeni platform mu?
-4. Sonra: M8'e geçiş (`docs/09_ROADMAP.md`).
+   - Kökyiyen'in İni'nde arena görseli büyük mor mağara kutularının arkasında kalıyor; arka duvarlara doku olarak mı giysin?
+5. Sonra: M8'e geçiş (`docs/09_ROADMAP.md`).
 
 ## 4. Yeni varlık gelince kontrol listesi
 1. `godot --headless --path . --import` → `godot --headless --path . res://tests/model_check.tscn`
 2. Tripo çıktısı en büyük kenarı 1 m'ye indirir → `.glb.import` içinde `nodes/root_scale` = hedef boy. Orijin ortadaysa `import_script/path="res://tools/import/align_base_import.gd"`. Oto-rig yırtılıyorsa `smooth_rig_import.gd` (docs/07 §7.6).
 3. Doku: `_basecolor` 1024 (boss/Alpay 2048), normal/metal 256 (`process/size_limit`).
-4. Galeri + web ekran görüntüsü ile gözle kontrol (headless'ta GPU yok). Geçici galeri sahnesi `scenes/dev/` altına yazılıp silinir; web build'i `project.godot` main_scene geçici değiştirilerek alınır.
+4. Gözle kontrol: bulutta `xvfb-run -a godot --rendering-driver opengl3` ile gerçek kare çizilebiliyor (llvmpipe) → geçici galeri/oda sahnesinden `get_viewport().get_texture().get_image().save_png()` (web build'e gerek yok). Ya da galeri + web ekran görüntüsü. Geçici galeri sahnesi `scenes/dev/` altına yazılıp silinir; web build'i `project.godot` main_scene geçici değiştirilerek alınır.
 5. Testler yeşil → docs (07, 08, 09, 00) → commit → `tools/deploy_web.sh`.
 
 ## 5. PC'de çalışma notları

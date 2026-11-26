@@ -17,6 +17,7 @@ func _process(_delta: float) -> void:
 
 
 func _build() -> void:
+	parallax_hides_backdrops = false   # sır duvarı (illusion_box) arka duvarla bütün kalmalı
 	# Arka duvar: sır bölümü (x 33 → 37) çarpışmasız "sahte" duvar
 	backdrop(-12.0, SECRET_X1, -2.0, 14.0, C_ROOT)
 	backdrop(SECRET_X2, 42.0, -2.0, 14.0, C_ROOT)

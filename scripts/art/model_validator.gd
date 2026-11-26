@@ -20,6 +20,7 @@ const BUDGETS: Dictionary = {
 const TRI_OVERRIDES: Dictionary = {
 	"fern_1m_a": 20000,
 	"vine_curtain_4m_a": 16000,
+	"spirit_lantern": 8000,   # kandil: oda başına ≤ 2 (GreyboxRoom.spirit_lantern)
 }
 ## Bilinen modellerin beklenen boyu (m) ve toleransı (docs/07: Alpay 1.6, Kocabaş ~3, Kökyiyen 12–15).
 const EXPECTED_HEIGHT: Dictionary = {
