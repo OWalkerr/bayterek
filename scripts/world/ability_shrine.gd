@@ -4,11 +4,16 @@ extends Area3D
 ## "yetenek kazanma" anı gösterilir (docs/08). Yetenek zaten varsa sunak sönük durur.
 
 const GROUP: StringName = &"ability_shrine"
+const MODEL_PATH: String = "res://assets/models/props/prop_ability_shrine.glb"
+## Model varken: sunak gövdesi koridorun arkasına itilir (m), küre sunak çanağının üstünde süzülür.
+const MODEL_BACK_OFFSET: float = 0.9
 
 @export var ability_id: StringName = &"whip_grapple"
 @export var color: Color = Color("e8a33d")
 
 var _orb: MeshInstance3D
+var model: ModelVisual
+var _orb_height: float = 1.6
 var _light: OmniLight3D
 var _time: float = 0.0
 
@@ -33,7 +38,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	if _orb.visible:
-		_orb.position.y = 1.6 + sin(_time * 2.0) * 0.12
+		_orb.position.y = _orb_height + sin(_time * 2.0) * 0.12
 
 
 func _refresh() -> void:
@@ -51,6 +56,9 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 func _build_visual() -> void:
+	if ResourceLoader.exists(MODEL_PATH):
+		_build_model_visual()
+		return
 	var stone := StandardMaterial3D.new()
 	stone.albedo_color = Color("4a3550")
 	var base := CylinderMesh.new()
@@ -79,4 +87,29 @@ func _build_visual() -> void:
 	_light.light_color = color
 	_light.omni_range = 6.0
 	_light.position = Vector3.UP * 1.8
+	add_child(_light)
+
+
+## Kök oyuğundaki taş sunak (2.2 m). Yetenek küresi sunak çanağının üstünde süzülür.
+func _build_model_visual() -> void:
+	model = ModelVisual.spawn(self, MODEL_PATH, Vector3.BACK)
+	model.position = Vector3.BACK * -MODEL_BACK_OFFSET
+	_orb_height = 1.35
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 3.0
+	var orb := SphereMesh.new()
+	orb.radius = 0.28
+	orb.height = 0.56
+	orb.material = mat
+	_orb = MeshInstance3D.new()
+	_orb.mesh = orb
+	_orb.position = Vector3(0.0, _orb_height, -MODEL_BACK_OFFSET + 0.3)
+	add_child(_orb)
+	_light = OmniLight3D.new()
+	_light.light_color = color
+	_light.omni_range = 6.0
+	_light.position = Vector3(0.0, _orb_height + 0.3, 0.0)
 	add_child(_light)

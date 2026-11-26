@@ -5,6 +5,7 @@ extends GreyboxRoom
 
 
 func _build() -> void:
+	parallax_preset = &"cave"
 	backdrop(-11.0, 41.0, -2.0, 16.0, C_CAVE)
 	platform(-11.0, 41.0, 0.0, 2.0, C_BARK, 4.0)
 	box(Vector3(15.0, 14.5, 0.0), Vector3(52.0, 1.0, 4.0), C_CAVE)     # tavan

@@ -20,6 +20,11 @@ const E_PLATFORM := "res://assets/models/environment/env_root_platform_4m_a.glb"
 const E_CAVE_MOUTH := "res://assets/models/environment/env_cave_mouth_6m_a.glb"
 const E_BRIDGE := "res://assets/models/environment/env_root_bridge_6m_a.glb"
 const E_LEDGE := "res://assets/models/environment/env_root_ledge_1m_a.glb"
+## Süs propları (docs/11 §3).
+const P_TOTEM := "res://assets/models/props/prop_totem_stone.glb"
+const P_LANTERN := "res://assets/models/props/prop_spirit_lantern.glb"
+## Arka duvar kutularının grubu (ParallaxBackdrop görüntülerini gizler).
+const BACKDROP_GROUP: StringName = &"backdrop_wall"
 
 var goal: RoomGoal = null
 ## Otomatik sınırlara eklenen pay (m).
@@ -27,6 +32,12 @@ var bounds_margin: float = 1.0
 ## Otomatik giydirme (ot, eğrelti, sarkan kök, spor; RoomDressing). Alt sınıf _build içinde kapatabilir.
 var dressing_enabled: bool = true
 var dressing: RoomDressing
+## Parallax arka plan ön ayarı (ParallaxBackdrop.PRESETS; boş = kapalı). Alt sınıf _build içinde değiştirir.
+var parallax_preset: StringName = &"kokdibi"
+var parallax: ParallaxBackdrop
+## Parallax kurulunca arka duvar kutularının görüntüsü gizlensin mi. Arkasında sır saklayan
+## (illusion_box ile örtülen) odalar false yapar: duvar kalır, parallax yalnız üstünde görünür.
+var parallax_hides_backdrops: bool = true
 
 
 func _ready() -> void:
@@ -35,6 +46,8 @@ func _ready() -> void:
 		bounds = compute_bounds()
 	if dressing_enabled:
 		dressing = RoomDressing.dress(self)
+	if parallax_preset != &"" and ParallaxBackdrop.has_textures(parallax_preset):
+		parallax = ParallaxBackdrop.build(self, parallax_preset)
 
 
 ## Odadaki tüm statik kutuların birleşik AABB'si (+ pay).
@@ -101,8 +114,10 @@ func platform(x1: float, x2: float, top_y: float, thickness: float = 0.5,
 
 
 ## Arka plan duvarı (oyuncunun arkasında, -Z'de): ölçek ve yön hissi için.
+## Parallax kurulan odalarda görüntüsü gizlenir (çarpışma ve oda sınırı kalır).
 func backdrop(x1: float, x2: float, y1: float, y2: float, color: Color = C_ROOT) -> void:
-	box(Vector3((x1 + x2) * 0.5, (y1 + y2) * 0.5, -3.5), Vector3(x2 - x1, y2 - y1, 1.0), color)
+	var b := box(Vector3((x1 + x2) * 0.5, (y1 + y2) * 0.5, -3.5), Vector3(x2 - x1, y2 - y1, 1.0), color)
+	b.add_to_group(BACKDROP_GROUP)
 
 
 ## Görsel ama çarpışmasız kutu: yandan bakınca duvar gibi görünür, derinlikte içinden geçilir
@@ -212,6 +227,39 @@ func decor(path: String, at: Vector3, yaw_deg: float = 0.0, scale_mul: float = 1
 	add_child(inst)
 	Stylizer.apply(inst)
 	return inst
+
+
+## Taş mangal (ateşli süs). `at` = ayak tabanı.
+func brazier(at: Vector3) -> FireProp:
+	var f := FireProp.new()
+	f.kind = &"brazier"
+	f.position = at
+	add_child(f)
+	return f
+
+
+## Duvar meşalesi. `at` = duvar yüzündeki tutturma noktasının altı; `yaw_deg` odaya bakış (0 = +Z).
+func torch(at: Vector3, yaw_deg: float = 0.0) -> FireProp:
+	var f := FireProp.new()
+	f.kind = &"torch"
+	f.position = at
+	f.rotation_degrees.y = yaw_deg
+	add_child(f)
+	return f
+
+
+## Göktürk işaretli dikili taş (balbal), süs.
+func totem(at: Vector3, yaw_deg: float = 0.0, scale_mul: float = 1.0) -> Node3D:
+	return decor(P_TOTEM, at, yaw_deg, scale_mul)
+
+
+## Tavandan asılı ruh kandili: `ceiling_at` = asıldığı nokta; hafifçe salınır, turkuaz ışık verir.
+func spirit_lantern(ceiling_at: Vector3, drop: float = 0.8) -> SpiritLantern:
+	var l := SpiritLantern.new()
+	l.drop = drop
+	l.position = ceiling_at
+	add_child(l)
+	return l
 
 
 func glow(at: Vector3, color: Color = C_GLOW) -> void:

@@ -28,6 +28,9 @@ const M_PILLAR := ENV + "env_root_pillar_6m_a.glb"
 const M_ROCK_S := ENV + "env_rock_1m_b.glb"
 const M_PLATFORM_S := ENV + "env_root_platform_2m_a.glb"
 const M_WALL := ENV + "env_root_wall_4m_a.glb"
+## Sarkan kökler (yalnız süs, tutunulmaz — karar 2026-11-26). a: kalın + saçaklı, b: ince yapraklı.
+const M_HANG_A := ENV + "env_hanging_root_3m_a.glb"
+const M_HANG_B := ENV + "env_hanging_root_3m_b.glb"
 
 @export var grass_spacing: float = 0.85
 @export var max_tufts: int = 140
@@ -44,6 +47,9 @@ const M_WALL := ENV + "env_root_wall_4m_a.glb"
 @export var max_branches: int = 3
 @export var max_pillars: int = 3
 @export var max_wall_pieces: int = 3
+## Sarkan kök modeli sınırı (oda başına; kalanlar prosedürel saçak). Boy aralığı (m).
+@export var max_hanging_roots: int = 8
+@export var hanging_root_length: Vector2 = Vector2(1.4, 2.8)
 ## Zemin karosunun renk çarpanı (Tripo yosunu bölge paletinde fazla açık kalıyor).
 @export var floor_tint: Color = Color(0.62, 0.68, 0.64)
 
@@ -176,9 +182,16 @@ func _hang_strands(box: AABB, mat: Material) -> void:
 	var z := clampf(box.position.z + 0.3, -1.6, 1.0)
 	var any := false
 	while x < box.position.x + box.size.x - 0.3 and strand_count < max_strands:
-		var len := _rng.randf_range(0.8, 2.4)
-		_place(_strand_mesh(), mat, Vector3(x, bottom, z + _rng.randf_range(0.0, 0.3)), 1.0,
-				Vector3(1.0, len / 2.0, 1.0))
+		var at := Vector3(x, bottom, z + _rng.randf_range(0.0, 0.3))
+		# Her üç saçaktan biri sarkan kök modeli (bütçe dolana kadar); boyu ölçekle ayarlanır
+		if strand_count % 3 == 0 and int(model_counts.get(&"hanging_root", 0)) < max_hanging_roots \
+				and ResourceLoader.exists(M_HANG_A):
+			var path := M_HANG_A if _rng.randf() < 0.5 or not ResourceLoader.exists(M_HANG_B) else M_HANG_B
+			var len_m := _rng.randf_range(hanging_root_length.x, hanging_root_length.y)
+			_hang_model(path, &"hanging_root", at + Vector3.UP * 0.1, len_m / 3.0)
+		else:
+			var len := _rng.randf_range(0.8, 2.4)
+			_place(_strand_mesh(), mat, at, 1.0, Vector3(1.0, len / 2.0, 1.0))
 		strand_count += 1
 		any = true
 		x += _rng.randf_range(0.9, 2.2)

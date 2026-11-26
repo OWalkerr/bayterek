@@ -16,6 +16,7 @@ const BACK_RAIL_Z: float = -24.0
 
 
 func _build() -> void:
+	parallax_preset = &"cave"
 	# Ön katman
 	box(Vector3(4.0, -1.0, 0.0), Vector3(28.0, 2.0, 4.0), C_BARK)          # x -10 → 18
 	box(Vector3(0.0, 8.0, -3.5), Vector3(20.0, 20.0, 1.0), C_ROOT)          # arka duvar (x -10 → 10)

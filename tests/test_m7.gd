@@ -36,6 +36,7 @@ func _run() -> void:
 	await _test_trap_flower()
 	await _test_root_snake()
 	await _test_art_props()
+	await _test_asset_set_2()
 	await _test_dressing_and_fog()
 	await _test_land_dust()
 	print("[TEST] bitti — başarısız: %d" % _failures)
@@ -613,6 +614,60 @@ func _test_art_props() -> void:
 				"y %.1f → %.1f" % [y_hidden, boss.model.position.y])
 		var tail := boss.model.bone("tripo__Tail_3")
 		_check("kökyiyen: kuyruk/gövde yordamsal kıvrılıyor", boss.model.bone_pose_angle(tail) > 0.02, "")
+
+
+## Varlık seti 2 (2026-11-26): parallax arka plan, mangal/meşale/kandil/totem, oyun nesnesi modelleri,
+## sarkan kök modelleri (yalnız süs).
+func _test_asset_set_2() -> void:
+	var room := await _enter(&"savrulma", Vector3(0.0, 0.1, 0.0)) as GreyboxRoom
+	var px := room.parallax
+	_check("parallax: Kök Dibi katmanları kuruldu", px != null and px.layer_count() >= 6, "katman=%d" % (px.layer_count() if px else 0))
+	_check("parallax: arka duvar görüntüsü gizlendi (çarpışma kalır)", px != null and px.hidden_backdrops > 0, "")
+	if px != null:
+		var far := (px.layers[&"l0"] as Array)[0] as MeshInstance3D
+		var mid := (px.layers[&"l2"] as Array)[0] as MeshInstance3D
+		_check("parallax: uzak katman daha derinde (gerçek 3D parallax)", far.global_position.z < mid.global_position.z - 20.0, "")
+		var mat := far.material_override as StandardMaterial3D
+		_check("parallax: ışıksız + sissiz + stilize edilmez", mat.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED \
+				and mat.disable_fog and _count_unstylized(px) == 0, "")
+		var fg := (px.layers[&"fg_top"] as Array)[0] as MeshInstance3D
+		_check("parallax: FG şeridi oyuncunun önünde", fg.global_position.z > 2.0, "z=%.1f" % fg.global_position.z)
+		px.set_depth_mode(true)
+		_check("parallax: derinlik kamerasında FG/yakın katman gizli, uzak katman görünür", not fg.visible and far.visible and not mid.visible, "")
+		px.set_depth_mode(false)
+		_check("parallax: yan kameraya dönünce hepsi görünür", fg.visible and mid.visible, "")
+	var d := room.dressing
+	_check("sarkan kök: tavan altına model (süs, tutunulmaz)", d != null and int(d.model_counts.get(&"hanging_root", 0)) > 0 \
+			and int(d.model_counts.get(&"hanging_root", 0)) <= d.max_hanging_roots, str(d.model_counts if d else {}))
+	_check("oda hedefi: Öz kristali modeli", room.goal != null and room.goal.model != null, "")
+	room = await _enter(&"ust_kokler", Vector3(5.0, 0.5, 0.0)) as GreyboxRoom
+	_check("parallax: sır odasında arka duvar korunur", room.parallax == null or room.parallax.hidden_backdrops == 0, "")
+	room = await _enter(&"ocak_odasi", Vector3(-3.0, 0.1, 0.0)) as GreyboxRoom
+	var fires := 0
+	var torches := 0
+	for f: Node in get_tree().get_nodes_in_group(FireProp.GROUP):
+		var fp := f as FireProp
+		if fp.model != null and fp.fire.emitting and fp.embers.emitting:
+			fires += 1
+			torches += 1 if fp.kind == &"torch" else 0
+	_check("mangal + meşale: model + ateş + titreyen ışık", fires >= 4 and torches >= 2, "ateş=%d meşale=%d" % [fires, torches])
+	var lanterns := get_tree().get_nodes_in_group(SpiritLantern.GROUP)
+	var swing_a := 0.0
+	if not lanterns.is_empty():
+		var l := lanterns[0] as SpiritLantern
+		swing_a = l.pivot.rotation.z
+		await _frames(20)
+		_check("kandil: model + salınım", l.model != null and absf(l.pivot.rotation.z - swing_a) > 0.0005, "")
+	else:
+		_check("kandil: odada", false, "")
+	_check("parallax: Ocak Odası'nda gök deliği", room.parallax != null and room.parallax.layers.has(&"sky_hole"), "")
+	room = await _enter(&"sunak", Vector3(-6.0, 0.1, 0.0)) as GreyboxRoom
+	var shrine := _first(AbilityShrine.GROUP, func(_n: Node) -> bool: return true) as AbilityShrine
+	_check("yetenek sunağı: model bağlı", shrine != null and shrine.model != null, "")
+	room = await _enter(&"yanki", Vector3(-6.0, 0.5, 0.0)) as GreyboxRoom
+	var shard := _first(Collectible.GROUP, func(_n: Node) -> bool: return true) as Collectible
+	_check("Kut parçası: model bağlı (alınmadıysa)", shard == null or shard.model != null, "")
+	_check("parallax: mağara ön ayarı", room.parallax != null and room.parallax.preset == &"cave", "")
 
 
 func _test_dressing_and_fog() -> void:
