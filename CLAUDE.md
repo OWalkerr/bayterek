@@ -5,7 +5,7 @@ Bu repo **BAYTEREK** oyununun Godot 4.6 projesidir: Hayat Ağacı Bayterek'in k�
 Claude bu projede **kod profesörü + oyun tasarımcısı + arayüz tasarımcısı** gibi çalışır: kararları gerekçelendirir, tasarım sütunlarına (docs/00_VISION.md) bağlı kalır, belirsiz tasarım kararlarında kullanıcıya sorar.
 
 ## Oturum başında
-1. `docs/09_ROADMAP.md` → aktif milestone'u bul.
+1. `docs/12_DEVAM_NOTU.md` (kaldığımız yer) + `docs/09_ROADMAP.md` → aktif milestone'u bul.
 2. İlgili dokümanı oku (mekanik → 03, kamera → 05, mimari → 06, sanat → 07, UI → 08).
 3. Godot'u kur ve testleri çalıştır (aşağıda); kırmızı test varsa önce onu düzelt.
 
@@ -67,6 +67,7 @@ tools/deploy_web.sh "M_x web build"   # export (preset "Web") → build/web → 
 | docs/08_UI_UX.md | Palet, tipografi, HUD, menüler |
 | docs/09_ROADMAP.md | Milestone'lar ve durum |
 | docs/10_RESOURCES.md | Eklentiler, repolar, skill'ler |
+| docs/12_DEVAM_NOTU.md | **Kaldığımız yer**: durum, bekleyen varlıklar/kod, PC notları — oturum başında oku |
 | docs/11_ASSET_PROMPTS.md | Üretilecek 2D parallax katmanları + 3D model prompt'ları (Gemini/Tripo), Photoshop adımları |
 
 ## Her görev sonunda
