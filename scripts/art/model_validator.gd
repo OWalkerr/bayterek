@@ -48,6 +48,8 @@ static func name_of(path: String) -> String:
 
 ## Bir model sahnesini doğrular. Sonuç: {path, kind, ok, errors, warnings, stats}
 static func validate_scene(root: Node3D, path: String) -> Dictionary:
+	if path.get_file().begins_with("anim_"):
+		return validate_animation(root, path)
 	var kind := kind_of(path)
 	var errors: PackedStringArray = []
 	var warnings: PackedStringArray = []
@@ -91,6 +93,34 @@ static func validate_scene(root: Node3D, path: String) -> Dictionary:
 			"+X", "-X": errors.append("Model yana (%s) bakıyor (+Z olmalı)" % stats["facing"])
 			"?": warnings.append("Bakış yönü iskeletten ölçülemedi — +Z olduğundan emin ol")
 	return _result(path, kind, errors, warnings, stats)
+
+
+## Yalnız animasyon dosyası (anim_<karakter>_<durum>.fbx, Mixamo "Without Skin"): insansı iskelet +
+## en az bir klip olmalı; mesh beklenmez ("With Skin" ise uyarı); iskelet Y-yukarı değilse uyarı
+## (oyunda atlanır, model klibi kullanılır).
+static func validate_animation(root: Node3D, path: String) -> Dictionary:
+	var errors: PackedStringArray = []
+	var warnings: PackedStringArray = []
+	var stats := measure(root)
+	var player := root.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	var clips := player.get_animation_list().size() if player != null else 0
+	stats["clips"] = clips
+	if not stats["has_skeleton"]:
+		errors.append("Animasyon dosyasında iskelet yok")
+	elif not (stats["missing_humanoid_bones"] as PackedStringArray).is_empty():
+		errors.append("Mixamo kemiği eksik: %s" % ", ".join(stats["missing_humanoid_bones"]))
+	if clips == 0:
+		errors.append("Animasyon klibi yok")
+	if stats["meshes"] > 0:
+		warnings.append("Mesh içeriyor ('With Skin' indirilmiş) — animasyon için 'Without Skin' yeterli")
+	var sk := root.find_child("Skeleton3D", true, false) as Skeleton3D
+	if sk != null:
+		var hips := _find_bone(sk, "Hips")
+		if hips >= 0:
+			var o := sk.get_bone_rest(hips).origin
+			if o.y < o.length() * 0.7:
+				warnings.append("İskelet Y-yukarı değil — oyunda bu klip atlanır (Without Skin indir)")
+	return _result(path, &"anim", errors, warnings, stats)
 
 
 static func _result(path: String, kind: StringName, errors: PackedStringArray, warnings: PackedStringArray, stats: Dictionary) -> Dictionary:
@@ -221,8 +251,11 @@ static func format_report(r: Dictionary) -> String:
 	var s: Dictionary = r["stats"]
 	var lines: PackedStringArray = []
 	lines.append("%s %s  [%s]" % ["✓" if r["ok"] else "✗", r["path"], r["kind"]])
-	lines.append("    üçgen %d · mesh %d · materyal %d · doku %d px · boy %.2f m · kemik %d · bakış %s" % [
-			s["triangles"], s["meshes"], s["materials"], s["max_texture"], s["height"], s["bones"], s["facing"]])
+	if r["kind"] == &"anim":
+		lines.append("    animasyon · klip %d · kemik %d · mesh %d" % [s.get("clips", 0), s["bones"], s["meshes"]])
+	else:
+		lines.append("    üçgen %d · mesh %d · materyal %d · doku %d px · boy %.2f m · kemik %d · bakış %s" % [
+				s["triangles"], s["meshes"], s["materials"], s["max_texture"], s["height"], s["bones"], s["facing"]])
 	for e: String in r["errors"]:
 		lines.append("    HATA: " + e)
 	for w: String in r["warnings"]:

@@ -147,7 +147,7 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
   | `test_m5.tscn` | Bölge verisi (13 oda, 2 Kut, yeteneksiz/yetenekli erişilebilirlik), kanca (yeteneksiz çalışmaz, hedef, ip), sunak, **botla**: Kanca Bahçesi, Ocak Odası tavanı, Çiçek Kuyusu (kancalı geçer / kancasız geçemez), derinlik sırrı → Gizli Oda; Öz + iyileşme |
   | `test_m6.tscn` | Boss: giriş (kart, kilit), çatlak uyarısı ≥ 0.4 sn, zayıf nokta, fırlama/süpürme (zıplayınca kaçılır), Faz 2 (Şişkin, sınır, tüm arena), kovalamaca (zemin ağızla çöker, değince hasar + fırlatma, ölüm yok), final, ödüller, hikaye, boss geri gelmez; **bot ile tam dövüş denemeleri** (`TRIALS=5`, `HIT_LOG=1`) |
   | `test_m7.tscn` | Shader + palet, Stylizer (renk/ışıma korunur, efektler atlanır, idempotent), **15 odanın tamamında çevrilmemiş opak materyal yok**, düşman parlaması, ortam paleti, ModelValidator (yapay iyi/kötü modeller), PlayerAnimator durumları |
-  | `model_check.tscn` | AI modelleri: `assets/models/**` (model yoksa 0 ile geçer) |
+  | `model_check.tscn` | AI modelleri: `assets/models/**` (model yoksa 0 ile geçer). `anim_*` dosyaları ayrı kuralla: insansı iskelet + ≥ 1 klip; mesh / Z-yukarı iskelet uyarı |
   | `test_m2.tscn` | Kombo 1–1–2, kombo penceresi, yukarı vuruş, pogo, Savrulma Saldırısı, hit-stop, temas hasarı/dokunulmazlık/geri itilme, düşüş cezası, ölüm → oda başı, spor bulutu, **bot ile savaş odası** |
 - Çalıştırma: `godot --headless --fixed-fps 60 --path . res://tests/<sahne>.tscn` → çıkış kodu 0, `SCRIPT ERROR` yok.
   `--fixed-fps 60` gerçek zaman senkronunu kapatır: testler saniyeler yerine anında biter, delta yine 1/60.
