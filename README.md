@@ -47,3 +47,7 @@ godot --headless --fixed-fps 60 --path . res://tests/test_m4.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m5.tscn
 godot --headless --fixed-fps 60 --path . res://tests/test_m6.tscn
 ```
+
+## Windows'ta çalıştırma
+`BASLAT.bat` dosyasına çift tıkla: Godot 4.6.3'ü bulur, ilk açılışta modelleri içe aktarır, oyunu veya editörü açar.
+Gri/siyah ekran görürsen menüden **uyumluluk modu**nu (2 veya 4) seç. Hata çıktıları `log/` klasöründe.

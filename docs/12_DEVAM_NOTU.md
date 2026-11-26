@@ -24,6 +24,7 @@
 
 ## 3. Bekleyen işler (sırayla)
 1. **Kullanıcıdan gelecek varlıklar** (prompt'lar `docs/11_ASSET_PROMPTS.md`):
+   - Not (2026-11-26): kullanıcı "yükledim" dedi ama GitHub'a hiçbir dosya gelmedi (dallar ve PR'lar da boş) — PC'de klasöre koyup push etmemiş olabilir.
    - [ ] Parallax görselleri → `assets/textures/backgrounds/` (`bg_kokdibi_l0_far.jpg`, `_l1_roots.png`, `_l2_mid.png`, `_l3_glow`, `fg_kokdibi_top/bottom.png`, `_lightshafts`, `_cave_far.jpg`, `bg_kokyiyen_arena.jpg`, `_sky_hole.png`)
    - [ ] Sarkan kök `env_hanging_root_3m_a/b.glb`
    - [ ] Prop'lar: `prop_brazier`, `prop_torch_wall`, `prop_totem_stone`, `prop_kut_shard`, `prop_oz_crystal`, `prop_ability_shrine`, `prop_heavy_boulder`, `prop_root_gate`, (isteğe bağlı) `prop_rotten_vine`, `prop_spirit_lantern`, `prop_feather_pendant`
@@ -48,6 +49,7 @@
 5. Testler yeşil → docs (07, 08, 09, 00) → commit → `tools/deploy_web.sh`.
 
 ## 5. PC'de çalışma notları
+- **`BASLAT.bat` (kök klasör):** çift tıkla → Godot 4.6.3'ü bulur (proje klasörü, üst klasör, İndirilenler, Masaüstü, Belgeler; bulamazsa exe'yi pencereye sürükle, yol `godot_yolu.txt`'ye kaydedilir), sürümü denetler, ilk açılışta içe aktarmayı konsolda yapar, menü: oyun / oyun (uyumluluk: OpenGL) / editör / editör (uyumluluk) / içe aktarmayı yenile. Çıktılar `log/` (git dışı). Kullanıcı "Godot gri ekranda kalıyor" dedi (2026-11-26) — olası nedenler: Vulkan desteklemeyen ekran kartı (→ uyumluluk modu), yanlış Godot sürümü, ilk içe aktarmanın sürmesi. Bir sonraki oturumda `log/oyun.txt` istenecek.
 - **Godot 4.6.3** (sürüm yükseltme yok). Windows: `Godot_v4.6.3-stable_win64.exe`. Projeyi "Import" → `project.godot`. İlk açılışta tüm modeller içe aktarılır (birkaç dakika); `tools/import/*.gd` içe aktarma betikleri o sırada çalışır (Kökyiyen/Kocabaş/sürüngen rig düzeltmesi, eğrelti/perde taban hizası) — normal.
 - Testler PC'de: `godot_console.exe --headless --fixed-fps 60 --path . res://tests/test_m7.tscn` (Windows'ta `_console` sürümü çıktı verir).
 - Oynamak: F5 (ana sahne `scenes/main/main.tscn`). Menüde 0–7 geliştirici odaları; F1 bilgi, F2 canlı tuning, F3 animasyon önizleme, R oda baştan.
