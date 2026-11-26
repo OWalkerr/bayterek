@@ -67,6 +67,7 @@ tools/deploy_web.sh "M_x web build"   # export (preset "Web") → build/web → 
 | docs/08_UI_UX.md | Palet, tipografi, HUD, menüler |
 | docs/09_ROADMAP.md | Milestone'lar ve durum |
 | docs/10_RESOURCES.md | Eklentiler, repolar, skill'ler |
+| docs/11_ASSET_PROMPTS.md | Üretilecek 2D parallax katmanları + 3D model prompt'ları (Gemini/Tripo), Photoshop adımları |
 
 ## Her görev sonunda
 - Testler yeşil.
