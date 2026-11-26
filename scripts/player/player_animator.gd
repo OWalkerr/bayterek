@@ -169,11 +169,45 @@ func _prepare_clips() -> void:
 		var last: Vector3 = anim.track_get_key_value(track, n - 1)
 		var travel := Vector2(last.x - first.x, last.z - first.z).length()
 		if logical == &"run" and travel > 0.01 and anim.length > 0.0:
-			# Klibin doğal hızı (model ölçeğiyle): oynatma hızını oyuncu hızına eşlemek için
-			run_clip_speed = travel / anim.length   # import root_scale izlere de uygulanır → metre
+			# Klibin doğal hızı (import root_scale izlere de uygulanır → metre)
+			run_clip_speed = travel / anim.length
+		# Yerinde: ileri kayma eğilimi (ilk→son doğrusal) çıkarılır ve kalça yatayda iskeletin
+		# DİNLENME konumuna oturtulur. (İlk kareye sabitlemek yanlıştı: Tripo koşusu kalçayı dinlenmeden
+		# 0.8 m ileride başlatıyor → koşuya geçişte öne fırlama, durunca geri kayma, dönüşte savrulma.)
+		var bone := skeleton.find_bone(root_bone)
+		var rest := skeleton.get_bone_rest(bone).origin if bone >= 0 else first
+		var start_time := anim.track_get_key_time(track, 0)
+		var span := maxf(anim.track_get_key_time(track, n - 1) - start_time, 0.0001)
+		var mean_offset := Vector2.ZERO
+		var detrended: Array[Vector2] = []
 		for i in n:
 			var v: Vector3 = anim.track_get_key_value(track, i)
-			anim.track_set_key_value(track, i, Vector3(first.x, v.y, first.z))
+			var u := (anim.track_get_key_time(track, i) - start_time) / span
+			var trend := Vector2(lerpf(first.x, last.x, u), lerpf(first.z, last.z, u))
+			var d := Vector2(v.x, v.z) - trend
+			detrended.append(d)
+			mean_offset += d
+		mean_offset /= float(n)
+		for i in n:
+			var v: Vector3 = anim.track_get_key_value(track, i)
+			var d: Vector2 = detrended[i] - mean_offset   # yalnız salınım kalır
+			anim.track_set_key_value(track, i, Vector3(rest.x + d.x, v.y, rest.z + d.y))
+
+
+## Testler için: yerinde yapılan klipte kalçanın yatay ortalama sapması (dinlenmeye göre, m).
+func get_root_offset(clip: StringName) -> float:
+	if model_player == null or not model_player.has_animation(clip):
+		return -1.0
+	var anim := model_player.get_animation(clip)
+	var track := _find_bone_track(anim, root_bone)
+	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var rest := skeleton.get_bone_rest(skeleton.find_bone(root_bone)).origin
+	var sum := Vector2.ZERO
+	var n := anim.track_get_key_count(track)
+	for i in n:
+		var v: Vector3 = anim.track_get_key_value(track, i)
+		sum += Vector2(v.x - rest.x, v.z - rest.z)
+	return (sum / float(n)).length()
 
 
 func _find_bone_track(anim: Animation, bone: String) -> int:

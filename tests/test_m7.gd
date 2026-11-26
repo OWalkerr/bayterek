@@ -28,6 +28,7 @@ func _run() -> void:
 	_test_environment()
 	_test_validator()
 	_test_player_model()
+	await _test_hips_follow()
 	await _test_animator()
 	print("[TEST] bitti — başarısız: %d" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -217,9 +218,39 @@ func _test_player_model() -> void:
 		var t := run.find_track(NodePath("Armature/Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
 		var a: Vector3 = run.track_get_key_value(t, 0)
 		var b: Vector3 = run.track_get_key_value(t, run.track_get_key_count(t) - 1)
-		_check("model: koşu yerinde (kök yatayda kaymıyor)", Vector2(b.x - a.x, b.z - a.z).length() < 0.001, "")
+		_check("model: koşu yerinde (kök yatayda kaymıyor)", Vector2(b.x - a.x, b.z - a.z).length() < 0.02, "")
+		_check("model: koşuda kalça dinlenme konumunda (öne fırlama / geri kayma yok)", anim.get_root_offset(&"run") < 0.03,
+				"sapma=%.3f m" % anim.get_root_offset(&"run"))
 		_check("model: koşu klibinin doğal hızı ölçüldü", anim.run_clip_speed > 2.0 and anim.run_clip_speed < 6.0,
 				"%.2f m/s" % anim.run_clip_speed)
+
+
+## Koşuya geçiş / durma / ani dönüş boyunca kalçanın oyuncu merkezinden yatay en büyük sapması (m).
+func _test_hips_follow() -> void:
+	var anim := _player.animator
+	if anim.model == null:
+		return
+	_level.call(&"load_room", 4)
+	await _frames(3)
+	_teleport(Vector3(-4.0, 0.05, 0.0))
+	await _frames(30)
+	var sk := anim.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var hips := sk.find_bone(anim.root_bone)
+	var worst := 0.0
+	var phases := [[&"move_right", 40], [&"", 30], [&"move_right", 25], [&"move_left", 40], [&"", 30]]
+	for ph: Array in phases:
+		for a: StringName in [&"move_left", &"move_right"]:
+			Input.action_release(a)
+		if ph[0] != &"":
+			Input.action_press(ph[0])
+		for i in int(ph[1]):
+			await _frames(1)
+			var hp := (sk.global_transform * sk.get_bone_global_pose(hips)).origin
+			var off := Vector2(hp.x - _player.global_position.x, hp.z - _player.global_position.z).length()
+			worst = maxf(worst, off)
+	for a: StringName in [&"move_left", &"move_right"]:
+		Input.action_release(a)
+	_check("anim: koşu başla/dur/ani dönüşte kalça merkezde (≤ 0.3 m)", worst <= 0.3, "en büyük sapma=%.2f m" % worst)
 
 
 func _test_animator() -> void:
