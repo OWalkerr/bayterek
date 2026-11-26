@@ -35,10 +35,16 @@ const EXTERNAL_LIBRARY: StringName = &"ext"
 @export var target_lengths: Dictionary = {
 	&"whip_attack_1": 0.45, &"whip_attack_2": 0.45, &"whip_attack_3": 0.5,
 	&"whip_up": 0.45, &"whip_down": 0.45, &"swing_attack": 0.45,
-	&"jump_up": 0.5, &"land": 0.3, &"hurt": 0.45, &"death": 1.4,
+	&"jump_up": 0.4, &"land": 0.3, &"hurt": 0.45, &"death": 1.4,
 }
 ## Yere inişte "land" pozunun süresi.
-@export var land_time: float = 0.25
+@export var land_time: float = 0.3
+## Klip aralığı (sn): yalnız bu bölüm oynar. Mixamo zıplama/iniş klipleri yörüngenin tamamını içerir
+## (iniş klibi 3 boy yukarıdan düşerek başlar) — yörüngeyi fizik çizdiği için yalnız poz kısmı alınır.
+@export var clip_ranges: Dictionary = {&"land": Vector2(0.35, 1.0), &"jump_up": Vector2(0.15, 0.5)}
+## Bu kliplerde kalça ayakta duruş yüksekliğinin üstüne çıkamaz (klibin kendi zıplaması silinir;
+## çömelme kalır).
+@export var vertical_clamp: Array[StringName] = [&"jump_up", &"fall", &"land"]
 @export var blend_time: float = 0.12
 @export var run_lean_deg: float = 8.0
 @export var bob_amount: float = 0.05
@@ -196,6 +202,7 @@ func _prepare_clips() -> void:
 			if model_player.has_animation(clip):
 				model_player.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	var skeleton := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	_apply_ranges_and_clamps(skeleton)
 	var targets: Array = []
 	for logical: StringName in in_place:
 		for clip: StringName in [StringName(logical), StringName("%s/%s" % [EXTERNAL_LIBRARY, logical])]:
@@ -239,6 +246,63 @@ func _prepare_clips() -> void:
 			var v: Vector3 = anim.track_get_key_value(track, i)
 			var d: Vector2 = detrended[i] - mean_offset   # yalnız salınım kalır
 			anim.track_set_key_value(track, i, Vector3(rest.x + d.x, v.y, rest.z + d.y))
+
+
+## Klip aralığı kırpma + kalça dikey sınırı (bkz. clip_ranges, vertical_clamp).
+func _apply_ranges_and_clamps(skeleton: Skeleton3D) -> void:
+	if skeleton == null:
+		return
+	var bone := skeleton.find_bone(root_bone)
+	var rest_y := skeleton.get_bone_rest(bone).origin.y if bone >= 0 else 1.0
+	for logical: StringName in clip_ranges.keys():
+		for clip: StringName in [StringName(logical), StringName("%s/%s" % [EXTERNAL_LIBRARY, logical])]:
+			if model_player.has_animation(clip):
+				_trim(model_player.get_animation(clip), clip_ranges[logical])
+	for logical: StringName in vertical_clamp:
+		for clip: StringName in [StringName(logical), StringName("%s/%s" % [EXTERNAL_LIBRARY, logical])]:
+			if not model_player.has_animation(clip):
+				continue
+			var anim := model_player.get_animation(clip)
+			var track := _find_bone_track(anim, root_bone)
+			if track < 0:
+				continue
+			for i in anim.track_get_key_count(track):
+				var v: Vector3 = anim.track_get_key_value(track, i)
+				anim.track_set_key_value(track, i, Vector3(v.x, minf(v.y, rest_y), v.z))
+
+
+## Animasyonu [range.x, range.y] sn aralığına kırpar (zamanlar 0'dan başlar; uçlara ara değer anahtar).
+func _trim(anim: Animation, range: Vector2) -> void:
+	var start := clampf(range.x, 0.0, anim.length)
+	var end := clampf(range.y, start + 0.01, anim.length)
+	for t in anim.get_track_count():
+		var type := anim.track_get_type(t)
+		var start_val: Variant = null
+		var end_val: Variant = null
+		match type:
+			Animation.TYPE_POSITION_3D:
+				start_val = anim.position_track_interpolate(t, start)
+				end_val = anim.position_track_interpolate(t, end)
+			Animation.TYPE_ROTATION_3D:
+				start_val = anim.rotation_track_interpolate(t, start)
+				end_val = anim.rotation_track_interpolate(t, end)
+			Animation.TYPE_SCALE_3D:
+				start_val = anim.scale_track_interpolate(t, start)
+				end_val = anim.scale_track_interpolate(t, end)
+			_:
+				continue
+		var keep: Array = []
+		for k in anim.track_get_key_count(t):
+			var time := anim.track_get_key_time(t, k)
+			if time > start and time < end:
+				keep.append([time - start, anim.track_get_key_value(t, k)])
+		while anim.track_get_key_count(t) > 0:
+			anim.track_remove_key(t, 0)
+		anim.track_insert_key(t, 0.0, start_val)
+		for kv: Array in keep:
+			anim.track_insert_key(t, kv[0], kv[1])
+		anim.track_insert_key(t, end - start, end_val)
+	anim.length = end - start
 
 
 ## Testler için: yerinde yapılan klipte kalçanın yatay ortalama sapması (dinlenmeye göre, m).

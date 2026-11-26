@@ -29,6 +29,7 @@ func _run() -> void:
 	_test_validator()
 	await _test_player_model()
 	await _test_hips_follow()
+	await _test_jump_land_hips()
 	await _test_animator()
 	print("[TEST] bitti — başarısız: %d" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)
@@ -274,12 +275,47 @@ func _test_hips_follow() -> void:
 	_check("anim: koşu başla/dur/ani dönüşte kalça merkezde (≤ 0.3 m)", worst <= 0.3, "en büyük sapma=%.2f m" % worst)
 
 
+## Zıplama → düşüş → iniş boyunca kalça yüksekliği (oyuncu ayağına göre): klibin kendi
+## zıplaması / iniş klibinin "3 boy yukarıdan düşüşü" modelde görünmemeli.
+func _test_jump_land_hips() -> void:
+	var anim := _player.animator
+	if anim.model == null or anim.model_player == null:
+		return
+	_level.call(&"load_room", 2)
+	await _frames(3)
+	_teleport(Vector3(-3.0, 0.05, 0.0))
+	await _frames(30)
+	var sk := anim.model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var hips := sk.find_bone(anim.root_bone)
+	var standing := (sk.global_transform * sk.get_bone_global_pose(hips)).origin.y - _player.global_position.y
+	var hi := -INF
+	var lo := INF
+	var saw_land := false
+	Input.action_press(&"jump")
+	for i in 110:
+		await _frames(1)
+		if i == 20:
+			Input.action_release(&"jump")
+		if anim.current == &"land":
+			saw_land = true
+		var h := (sk.global_transform * sk.get_bone_global_pose(hips)).origin.y - _player.global_position.y
+		hi = maxf(hi, h)
+		lo = minf(lo, h)
+	Input.action_release(&"jump")
+	_check("anim: iniş pozu oynadı", saw_land, "")
+	_check("anim: zıplama/inişte kalça ayakta duruş boyunu aşmıyor", hi <= standing * 1.1,
+			"en yüksek=%.2f duruş=%.2f m" % [hi, standing])
+	_check("anim: iniş çömelmesi makul (yere gömülmüyor)", lo >= standing * 0.45, "en alçak=%.2f m" % lo)
+	_check("anim: iniş klibi kırpıldı (düşüş kısmı yok)", anim.model_player.get_animation(&"ext/land").length < 0.7,
+			"%.2f sn" % anim.model_player.get_animation(&"ext/land").length)
+
+
 func _test_animator() -> void:
 	_level.call(&"load_room", 4)
 	await _frames(3)
 	var anim := _player.animator
 	_teleport(Vector3(-6.0, 0.05, 0.0))
-	await _frames(20)
+	await _frames(45)   # olası iniş pozu (0.3 sn) bitsin
 	_check("anim: yerde duran → idle", anim.current == &"idle", str(anim.current))
 	if anim.model_player != null:
 		_check("anim: modelde idle klibi oynuyor", anim.get_playing_clip() == &"idle", str(anim.get_playing_clip()))
