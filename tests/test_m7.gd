@@ -27,6 +27,7 @@ func _run() -> void:
 	await _test_enemy_flash()
 	_test_environment()
 	_test_validator()
+	_test_rig_tools()
 	await _test_player_model()
 	await _test_hips_follow()
 	await _test_jump_land_hips()
@@ -157,6 +158,72 @@ func _test_validator() -> void:
 			and ModelValidator.name_of("enm_rot_crawler_a.glb") == "rot_crawler_a", "")
 	for n: Node in [good, off, big, back, heavy, norig, unnamed]:
 		n.free()
+
+
+## Sentetik iki kemikli tüp: alt yarı kemik 0'a, üst yarı kemik 1'e SERT bağlı (oto-rig hatası).
+## Bükme testi yırtılmayı yakalamalı; RigSmoother yırtılmayı azaltmalı. Gerçek modeller: bükme ölçülebiliyor.
+func _test_rig_tools() -> void:
+	var hard := _two_bone_tube()
+	var r0 := ModelValidator.bend_test(hard, 30.0)
+	_check("rig: sert ağırlık bükmede yırtılma olarak ölçülüyor", float(r0.get("worst_torn", 0.0)) > 0.003 and float(r0["worst"]) > 1.6,
+			"yırtık=%.4f" % float(r0.get("worst_torn", 0.0)))
+	RigSmoother.smooth_instance(hard.get_node(^"Skel/Tube") as MeshInstance3D, 8)
+	var r1 := ModelValidator.bend_test(hard, 30.0)
+	_check("rig: RigSmoother yırtılmayı azaltıyor", float(r1.get("worst_torn", 0.0)) < float(r0.get("worst_torn", 0.0)) * 0.5 \
+			and float(r1["worst"]) < float(r0["worst"]),
+			"önce=%.4f ×%.1f sonra=%.4f ×%.1f" % [float(r0.get("worst_torn", 0.0)), r0["worst"], float(r1.get("worst_torn", 0.0)), r1["worst"]])
+	var arrays := (hard.get_node(^"Skel/Tube") as MeshInstance3D).mesh.surface_get_arrays(0)
+	var w: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var ok := true
+	for v in w.size() / 4:
+		ok = ok and absf(w[v * 4] + w[v * 4 + 1] + w[v * 4 + 2] + w[v * 4 + 3] - 1.0) < 0.001
+	_check("rig: yumuşatılmış ağırlıklar normalize (Σ=1)", ok, "")
+	hard.free()
+	var boss := (load("res://assets/models/bosses/boss_kokyiyen.glb") as PackedScene).instantiate() as Node3D
+	var mi := boss.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+	_check("rig: Kökyiyen içe aktarmada yumuşatıldı", int(mi.get_meta(&"rig_smoothed", 0)) > 0, "")
+	boss.free()
+
+
+func _two_bone_tube() -> Node3D:
+	var root := Node3D.new()
+	var sk := Skeleton3D.new()
+	sk.name = "Skel"
+	root.add_child(sk)
+	sk.add_bone("b0")
+	sk.add_bone("b1")
+	sk.set_bone_parent(1, 0)
+	sk.set_bone_rest(1, Transform3D(Basis(), Vector3(0, 1, 0)))
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.set_skin_weight_count(SurfaceTool.SKIN_4_WEIGHTS)
+	var rings := 21
+	var seg := 8
+	for r in rings:
+		var y := 2.0 * r / (rings - 1)
+		for k in seg:
+			var a := TAU * k / seg
+			st.set_bones(PackedInt32Array([0 if y < 1.0 else 1, 0, 0, 0]))
+			st.set_weights(PackedFloat32Array([1, 0, 0, 0]))
+			st.add_vertex(Vector3(cos(a) * 0.2, y, sin(a) * 0.2))
+	for r in rings - 1:
+		for k in seg:
+			var a := r * seg + k
+			var b := r * seg + (k + 1) % seg
+			st.add_index(a); st.add_index(b); st.add_index(a + seg)
+			st.add_index(b); st.add_index(b + seg); st.add_index(a + seg)
+	var mi := MeshInstance3D.new()
+	mi.name = "Tube"
+	mi.mesh = st.commit()
+	var skin := Skin.new()
+	skin.add_named_bind("b0", Transform3D.IDENTITY)
+	skin.add_named_bind("b1", Transform3D(Basis(), Vector3(0, -1, 0)))
+	skin.set_bind_bone(0, 0)
+	skin.set_bind_bone(1, 1)
+	mi.skin = skin
+	sk.add_child(mi)
+	mi.skeleton = NodePath("..")
+	return root
 
 
 func _has(r: Dictionary, needle: String) -> bool:

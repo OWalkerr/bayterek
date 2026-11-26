@@ -78,3 +78,5 @@
 | 2026-11-25 | Stil, çalışma zamanı Stylizer + tek stilize shader + bölge paleti ile | Hangi araçtan gelirse gelsin her model ve greybox aynı aileye girer; elle materyal bağlama yok |
 | 2026-11-25 | Alpay modeli: Tripo (kullanıcı seçimi); ölçek import'ta root_scale 1.6 ile düzeltildi | İki araç üretildi, kullanıcı Tripo ile ilerliyor; model_check geçti (1.6 m, +Z, 19k üçgen) |
 | 2026-11-26 | Alpay animasyonları: Mixamo "Without Skin" klipleri çalışma zamanında Tripo modeline bağlanır (model değişmedi) | Kemik adları/hiyerarşi aynı, yerel pozlar doğrudan geçiyor; yeni model indirip yeniden doğrulamaya gerek kalmadı |
+| 2026-11-26 | Oto-rig kalitesi kodla ölçülür (bükme testi) ve içe aktarmada düzeltilir (ağırlık yumuşatma + kemik birleştirme); Blender'da elle rig düzeltmesi yok | Kullanıcı Blender kullanmıyor; Kocabaş kabuğu ikiye bölünmüş, Kökyiyen kuyruğu sert ağırlıklıydı — ikisi de Alpay seviyesine indi |
+| 2026-11-26 | Kökyiyen boyu 8 m (arena tavanına göre) | Tripo normalize çıktısı ölçeklendi; arenada tam görünür |

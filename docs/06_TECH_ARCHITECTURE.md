@@ -97,7 +97,8 @@ Alt sınıflar: `RotCrawler`, `SporeBloater` (kendi `enum State` + `match`). Teh
 ## Sanat Altyapısı (M7)
 - `assets/shaders/stylized_lit.gdshader` + `scripts/art/stylizer.gd` (`Stylizer.apply`) + `scripts/art/region_palette.gd` (`RegionPalette`, `data/art/palette_kok_dibi.tres`) + `scripts/art/region_environment.gd` (`RegionEnvironment`).
 - Kabuk her odayı yükleyince ve oyuncuyu oluşturunca `Stylizer.apply`; `Enemy` kendi görselini çevirir ve vuruş parlamasını shader'ın `flash` parametresiyle yapar.
-- `scripts/art/model_validator.gd` + `tests/model_check.tscn`: `assets/models/**` altındaki her GLB/GLTF/FBX'i ölçer.
+- `scripts/art/model_validator.gd` + `tests/model_check.tscn`: `assets/models/**` altındaki her GLB/GLTF/FBX'i ölçer; deri bağlı modellerde rig raporu + bükme testi (`[RIG]`).
+- `scripts/art/rig_smoother.gd` + `tools/import/smooth_rig_import.gd` (içe aktarma sonrası betik): oto-rig ağırlıklarını yumuşatır, katı parçayı bölen kemikleri birleştirir (docs/07 §7.6). Yalnız içe aktarmada çalışır; `tools/` web build'e girmez, işlenmiş sahne girer.
 - `scripts/player/player_animator.gd` (`Player/Animator`): mantıksal animasyon durumu; model yoksa kapsülde yordamsal poz, `Visual` altında AnimationPlayer'lı model varsa `clip_map` ile klip oynatır.
 - **Shader doğrulaması:** headless'ta GPU yok → shader yalnızca web build'de (WebGL/Compatibility) derlenip görülür; her M7 değişikliğinde web ekran görüntüsü alınır.
 

@@ -19,9 +19,12 @@ const BUDGETS: Dictionary = {
 const EXPECTED_HEIGHT: Dictionary = {
 	"alpay": [1.6, 0.15],
 	"kocabas": [3.0, 0.25],
-	"kokyiyen": [13.5, 0.12],
+	"kokyiyen": [8.0, 0.15],          # arena tavanı 12.5 m → dikilmiş gövde ≈ 8 m (karar 2026-11-26)
 	"rot_crawler": [0.6, 0.4],
 	"spore_bloater": [1.0, 0.4],
+	"trap_flower": [1.5, 0.3],
+	"root_snake": [0.9, 0.4],
+	"grapple_flower": [0.8, 0.3],
 }
 ## Mixamo/insansı iskelette bulunması gereken kemikler (önekten bağımsız aranır).
 const HUMANOID_BONES: Array[String] = ["Hips", "Spine", "Head", "LeftArm", "RightArm", "LeftHand",
@@ -82,7 +85,9 @@ static func validate_scene(root: Node3D, path: String) -> Dictionary:
 			var expected: Array = EXPECTED_HEIGHT[key]
 			if absf(height - float(expected[0])) > float(expected[0]) * float(expected[1]):
 				errors.append("Boy %.2f m; beklenen %.2f m ±%%%d (ölçek 1 birim = 1 m mi?)" % [height, expected[0], int(float(expected[1]) * 100.0)])
-	if kind == &"char" or kind == &"npc":
+	if kind == &"npc" and not stats["has_skeleton"]:
+		errors.append("NPC iskeletsiz (otomatik rig gerekli)")
+	if kind == &"char":
 		var missing: PackedStringArray = stats["missing_humanoid_bones"]
 		if not stats["has_skeleton"]:
 			errors.append("İnsansı model iskeletsiz (Mixamo/otomatik rig gerekli)")
@@ -93,6 +98,227 @@ static func validate_scene(root: Node3D, path: String) -> Dictionary:
 			"+X", "-X": errors.append("Model yana (%s) bakıyor (+Z olmalı)" % stats["facing"])
 			"?": warnings.append("Bakış yönü iskeletten ölçülemedi — +Z olduğundan emin ol")
 	return _result(path, kind, errors, warnings, stats)
+
+
+## Rig (deri ağırlığı) analizi. Her kemik için: etkilediği köşe sayısı (ağırlık > 0.3), bu köşelerin
+## kemiğe ortalama uzaklığı (model boyuna oranla), "Left/Right" adlı kemiklerde karşı tarafa sızma.
+## Sonuç: {bones: [...], dead: [...], leaks: [...], far: [...], unweighted: int, vertices: int, errors, warnings}
+static func rig_report(root: Node3D) -> Dictionary:
+	var out := {"bones": [], "dead": [], "leaks": [], "far": [], "unweighted": 0, "vertices": 0,
+			"errors": PackedStringArray(), "warnings": PackedStringArray()}
+	var mi: MeshInstance3D = null
+	for n: Node in root.find_children("*", "MeshInstance3D", true, false):
+		if (n as MeshInstance3D).skin != null:
+			mi = n as MeshInstance3D
+			break
+	if mi == null:
+		return out
+	var skeleton := mi.get_node_or_null(mi.skeleton) as Skeleton3D
+	if skeleton == null:
+		return out
+	var skin := mi.skin
+	var arrays := mi.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var bones_arr: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var nv := verts.size()
+	out["vertices"] = nv
+	if nv == 0 or bones_arr.size() == 0:
+		return out
+	var per := bones_arr.size() / nv
+	var aabb := mi.mesh.get_aabb()
+	var size := aabb.size.length()
+	var center := aabb.get_center()
+	# bağ (bind) indeksi → kemik konumu (mesh uzayında) ve adı
+	var bind_pos: Array[Vector3] = []
+	var bind_name: Array[String] = []
+	for b in skin.get_bind_count():
+		bind_pos.append(skin.get_bind_pose(b).affine_inverse().origin)
+		var name := skin.get_bind_name(b)
+		if name == &"" and skin.get_bind_bone(b) >= 0:
+			name = skeleton.get_bone_name(skin.get_bind_bone(b))
+		bind_name.append(String(name))
+	var count: Array[int] = []
+	var sum_dist: Array[float] = []
+	var sum_pos: Array[Vector3] = []
+	count.resize(bind_pos.size())
+	sum_dist.resize(bind_pos.size())
+	sum_pos.resize(bind_pos.size())
+	for b in bind_pos.size():
+		count[b] = 0
+		sum_dist[b] = 0.0
+		sum_pos[b] = Vector3.ZERO
+	var unweighted := 0
+	for v in nv:
+		var total := 0.0
+		for k in per:
+			var w := weights[v * per + k]
+			total += w
+			var b := bones_arr[v * per + k]
+			if w > 0.3 and b >= 0 and b < bind_pos.size():
+				count[b] += 1
+				sum_dist[b] += verts[v].distance_to(bind_pos[b])
+				sum_pos[b] += verts[v]
+		if total < 0.01:
+			unweighted += 1
+	out["unweighted"] = unweighted
+	# Sol/sağ ekseni: "Left" kemiklerin ortalama konumu ile "Right" olanların farkı
+	var left := Vector3.ZERO
+	var right := Vector3.ZERO
+	var nl := 0
+	var nr := 0
+	for b in bind_pos.size():
+		if bind_name[b].contains("Left"):
+			left += bind_pos[b]
+			nl += 1
+		elif bind_name[b].contains("Right"):
+			right += bind_pos[b]
+			nr += 1
+	var lr_axis := Vector3.ZERO
+	if nl > 0 and nr > 0:
+		lr_axis = (left / nl - right / nr).normalized()
+	for b in bind_pos.size():
+		var info := {"name": bind_name[b], "verts": count[b]}
+		if count[b] == 0:
+			(out["dead"] as Array).append(bind_name[b])
+		else:
+			var avg := sum_dist[b] / count[b] / size
+			info["avg_dist"] = avg
+			if avg > 0.35:
+				(out["far"] as Array).append("%s (%.0f%%)" % [bind_name[b], avg * 100.0])
+			if lr_axis != Vector3.ZERO and (bind_name[b].contains("Left") or bind_name[b].contains("Right")):
+				var side := (sum_pos[b] / count[b] - center).dot(lr_axis)
+				var expect := 1.0 if bind_name[b].contains("Left") else -1.0
+				var bone_side := (bind_pos[b] - center).dot(lr_axis)
+				if side * expect < -0.02 * size and bone_side * expect > 0.0:
+					(out["leaks"] as Array).append(bind_name[b])
+		(out["bones"] as Array).append(info)
+	if unweighted > 0:
+		(out["errors"] as PackedStringArray).append("%d köşe hiçbir kemiğe bağlı değil (animasyonda yerinde kalır)" % unweighted)
+	if not (out["leaks"] as Array).is_empty():
+		(out["errors"] as PackedStringArray).append("Sol/sağ ağırlık sızıntısı: %s" % ", ".join(out["leaks"]))
+	if not (out["far"] as Array).is_empty():
+		(out["warnings"] as PackedStringArray).append("Uzak köşeleri taşıyan kemik: %s" % ", ".join(out["far"]))
+	if not (out["dead"] as Array).is_empty():
+		(out["warnings"] as PackedStringArray).append("Hiç köşe taşımayan kemik: %d (%s)" % [(out["dead"] as Array).size(),
+				", ".join((out["dead"] as Array).slice(0, 8))])
+	return out
+
+
+## Bükme testi: her kemik sırayla `angle_deg` döndürülür, mesh CPU'da deri ağırlıklarıyla deforme edilir
+## (GPU ile aynı formül: Σ w · kemik_global_poz · bağ_pozu · köşe) ve üçgen kenarlarının uzama oranına bakılır.
+## Kötü ağırlıkta mesh yırtılır / sivri çıkar → oran büyür. Sonuç: {worst: float, worst_bone, bad: [[kemik, oran]]}
+static func bend_test(root: Node3D, angle_deg: float = 30.0, bad_ratio: float = 2.5) -> Dictionary:
+	var out := {"worst": 1.0, "worst_bone": "", "bad": []}
+	var mi: MeshInstance3D = null
+	for n: Node in root.find_children("*", "MeshInstance3D", true, false):
+		if (n as MeshInstance3D).skin != null:
+			mi = n as MeshInstance3D
+			break
+	if mi == null:
+		return out
+	var skeleton := mi.get_node_or_null(mi.skeleton) as Skeleton3D
+	if skeleton == null:
+		return out
+	var skin := mi.skin
+	var arrays := mi.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var bones_arr: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var nv := verts.size()
+	if nv == 0 or bones_arr.is_empty():
+		return out
+	var per := bones_arr.size() / nv
+	var bind_bone: Array[int] = []
+	for b in skin.get_bind_count():
+		var bone := skin.get_bind_bone(b)
+		if bone < 0:
+			bone = skeleton.find_bone(skin.get_bind_name(b))
+		bind_bone.append(bone)
+	# Kenarlar (benzersiz değil — yeterli) ve dinlenme uzunlukları
+	var edges := PackedInt32Array()
+	for t in range(0, idx.size(), 3):
+		edges.append_array([idx[t], idx[t + 1], idx[t + 1], idx[t + 2], idx[t + 2], idx[t]])
+	# Dinlenme pozunda deri uygulanmış kenar uzunlukları (taban). Bağ pozu dinlenmeyle birebir
+	# örtüşmeyebilir (ör. ölçekli GLB); oranı bu tabana göre almak bunu nötrler.
+	var base := _skin_vertices(skeleton, skin, bind_bone, verts, bones_arr, weights, per)
+	var rest_len := PackedFloat32Array()
+	rest_len.resize(edges.size() / 2)
+	for e in rest_len.size():
+		rest_len[e] = base[edges[e * 2]].distance_to(base[edges[e * 2 + 1]])
+	var size := mi.mesh.get_aabb().size.length()
+	var min_len := size * 0.002
+	for test_bone in skeleton.get_bone_count():
+		if skeleton.get_bone_parent(test_bone) < 0:
+			continue   # kök: tüm modeli katı döndürür, anlamsız
+		var posed := _skin_vertices(skeleton, skin, bind_bone, verts, bones_arr, weights, per, test_bone, deg_to_rad(angle_deg))
+		var worst := 1.0
+		var torn := 0
+		for e in rest_len.size():
+			if rest_len[e] < min_len:
+				continue
+			var r := posed[edges[e * 2]].distance_to(posed[edges[e * 2 + 1]]) / rest_len[e]
+			worst = maxf(worst, r)
+			if r > 1.6:
+				torn += 1
+		var torn_frac := float(torn) / float(rest_len.size())
+		if torn_frac > float(out.get("worst_torn", 0.0)):
+			out["worst_torn"] = torn_frac
+			out["worst_torn_bone"] = skeleton.get_bone_name(test_bone)
+		(out.get_or_add("per_bone", []) as Array).append([skeleton.get_bone_name(test_bone), worst, torn_frac])
+		var moved := 0.0
+		for v in range(0, nv, 7):
+			moved = maxf(moved, posed[v].distance_to(base[v]))
+		out["max_move"] = maxf(float(out.get("max_move", 0.0)), moved / size)
+		if worst > float(out["worst"]):
+			out["worst"] = worst
+			out["worst_bone"] = skeleton.get_bone_name(test_bone)
+		if worst > bad_ratio:
+			(out["bad"] as Array).append([skeleton.get_bone_name(test_bone), worst])
+	return out
+
+
+## Dinlenme pozundan, `test_bone` yerel X ekseninde `angle` döndürülmüş hâlde deri uygulanmış köşeler.
+## Global pozlar elle hesaplanır (ağaç dışındaki Skeleton3D pozları güncellemez).
+static func _skin_vertices(skeleton: Skeleton3D, skin: Skin, bind_bone: Array[int], verts: PackedVector3Array,
+		bones_arr: PackedInt32Array, weights: PackedFloat32Array, per: int, test_bone: int = -1, angle: float = 0.0) -> PackedVector3Array:
+	var count := skeleton.get_bone_count()
+	var global: Array[Transform3D] = []
+	global.resize(count)
+	var done := PackedByteArray()
+	done.resize(count)
+	for b in count:
+		_bone_global(skeleton, b, test_bone, angle, global, done)
+	var palette: Array[Transform3D] = []
+	for b in bind_bone.size():
+		var gb := bind_bone[b]
+		palette.append(global[gb] * skin.get_bind_pose(b) if gb >= 0 else Transform3D.IDENTITY)
+	var posed := PackedVector3Array()
+	posed.resize(verts.size())
+	for v in verts.size():
+		var p := Vector3.ZERO
+		var wsum := 0.0
+		for k in per:
+			var w := weights[v * per + k]
+			if w <= 0.0:
+				continue
+			p += (palette[bones_arr[v * per + k]] * verts[v]) * w
+			wsum += w
+		posed[v] = p / wsum if wsum > 0.0 else verts[v]
+	return posed
+
+
+static func _bone_global(skeleton: Skeleton3D, b: int, test_bone: int, angle: float, global: Array[Transform3D], done: PackedByteArray) -> Transform3D:
+	if done[b] == 1:
+		return global[b]
+	var local := skeleton.get_bone_rest(b)
+	if b == test_bone:
+		local.basis = local.basis * Basis(Vector3.RIGHT, angle)
+	var parent := skeleton.get_bone_parent(b)
+	global[b] = (_bone_global(skeleton, parent, test_bone, angle, global, done) * local) if parent >= 0 else local
+	done[b] = 1
+	return global[b]
 
 
 ## Yalnız animasyon dosyası (anim_<karakter>_<durum>.fbx, Mixamo "Without Skin"): insansı iskelet +

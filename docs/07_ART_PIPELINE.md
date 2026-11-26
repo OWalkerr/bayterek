@@ -90,6 +90,23 @@
 - **Yeni klip eklemek:** Tripo'da başka hazır animasyon (jump, climb …) seçip yeniden dışa aktar → aynı adla yükle; ya da Mixamo FBX'leri `anims/`'e. Klip adları mantıksal adlardan farklıysa `PlayerAnimator.clip_map`.
 - Alpay: 18 988 üçgen, 1 materyal, 2048 doku — bütçe içinde. Meshy kıyas modeli (`char_alpay_meshy.glb`, 10k üçgen, 1.7 m, Running/Walking klipli) referans olarak repoda kalır, web build'den hariç (`*_meshy.glb`).
 
+### Tripo oto-rig'li modeller — teslim kontrolü ve rig düzeltmesi (§7.6, 2026-11-26)
+Yüklenen set: Kocabaş (dev kaplumbağa), Çürük Sürüngen, Spor Kesesi, Tuzak Çiçek (tavandan sarkar), Kök Yılanı, Kanca Çiçeği, kaya / kök kemer / kök platform, Kökyiyen. Hepsi galeride 3 açıdan görüntülendi; ölçek/yön doğru.
+- **Ölçek** (`.glb.import` → `nodes/root_scale`, Tripo 1 birime normalize ediyor): Kocabaş 5.17 (boy 3.0 m, boy 5.2 m), sürüngen 1.3, spor kesesi 1.1, tuzak çiçek 1.5, kök yılanı 3.0, Kökyiyen 10 (8 m), kanca çiçeği 0.8, kaya 2.0, kemer 4.0, platform 4.0.
+- **Doku:** düşman/prop/çevre `_basecolor.jpg.import` → `process/size_limit=1024`; Alpay ve boss 2048.
+- **Rig ölçümü** (`model_check` → `[RIG]` satırı, `ModelValidator.rig_report` + `bend_test`): her kemik sırayla 20° bükülür, mesh CPU'da deri ağırlıklarıyla deforme edilir, kenarı ×1.6'dan fazla uzayan (yırtılan) üçgen kenarlarının oranı ölçülür. Referans: Mixamo rig'li Alpay **%0.01**. < %0.1 iyi, < %0.6 kabul, üstü sorunlu.
+- **Bulunan sorunlar ve düzeltme** (içe aktarma sonrası betik `tools/import/smooth_rig_import.gd`, `RigSmoother`):
+  | Model | Önce | Sorun | Düzeltme | Sonra |
+  |---|---|---|---|---|
+  | Kocabaş | %0.48 (30°'de %1.3) | Oto-rig kabuğu ön gövde (`Spine_0`), arka gövde (`bone_11`) ve kabuk çıkıntısı kemiklerine bölmüş → gövde bükülünce kabuk ortadan yırtılıyor | Gövde/kabuk kemikleri köke birleştirildi (kabuk katı); bacak, boyun, kafa, kuyruk serbest; + 8 tur ağırlık yumuşatma | **%0.07** |
+  | Kökyiyen | %0.76 (30°) | Kuyruk/kafa halkalarında sert (tek kemik) ağırlık | 12 tur Laplace yumuşatma | **%0.07** |
+  | Çürük Sürüngen | %0.41 (30°) | Gövde ekleminde sert sınır | 8 tur yumuşatma | %0.15 (kabul) |
+  | Tuzak Çiçek, Kök Yılanı | %0.02 / %0.00 | — | — | iyi |
+- **Ağırlık yumuşatma:** `w ← (1−α)·w + α·ort(komşu)`, UV dikişindeki kopya köşeler konumdan birleştirilir (dikiş açılmaz), köşe başına en büyük 4 etki, Σ=1. Bir modele uygulamak: `.glb.import` → `import_script/path="res://tools/import/smooth_rig_import.gd"`, tur sayısı / kemik birleştirme betikteki tablolarda.
+- **Bağsız köşe 0, sol/sağ sızıntı yok** — hiçbir modelde Blender'da elle rig düzeltmesi gerekmedi.
+- Modellerin hiçbirinde animasyon klibi yok (yalnız iskelet) → insansı olmayanlar yordamsal kemik animasyonuyla oynatılacak (sıradaki iş).
+- `env_rock_2m_a` dokusunun adı `prop_ocak_basecolor` (Tripo projesinden kalma ad); model bir kaya (yosunlu, mavi kristalli) — Ocak (ateşli taş ocak) modeli henüz yok.
+
 ### Üretim akışı (her model)
 1. **Konsept görsel** (Gemini / Midjourney / ChatGPT görsel): aşağıdaki prompt + sabit stil eki. Tek nesne, düz gri arka plan, karakterlerde **T-poz / A-poz**, önden veya 3/4.
 2. **Görselden 3D** (Tripo "Image to 3D" önerilir — metinden daha tutarlı):
@@ -140,7 +157,7 @@ assets/models/enemies/  environment/kok_dibi/  props/
 ```
 
 ## Kalite Kontrol (her model için)
-Otomatik: `godot --headless --path . --import && godot --headless --path . res://tests/model_check.tscn` (`ModelValidator`: tür öneki, üçgen/doku bütçesi, materyal ≤ 2, orijin ayak tabanı ortası, beklenen boy, insansıda Mixamo kemikleri ve +Z bakış). Elle:
+Otomatik: `godot --headless --path . --import && godot --headless --path . res://tests/model_check.tscn` (`ModelValidator`: tür öneki, üçgen/doku bütçesi, materyal ≤ 2, orijin ayak tabanı ortası, beklenen boy, insansıda Mixamo kemikleri ve +Z bakış; deri bağlı modellerde `[RIG]` satırı: ölü kemik, bağsız köşe, 20° bükme yırtığı — §7.6). Elle:
 - [ ] Oyun kamerasından (14 m, FOV 40) siluet okunuyor mu?
 - [ ] Bölge paletine uyuyor mu (stilize shader ile)?
 - [ ] Üçgen/doku bütçesi içinde mi?
